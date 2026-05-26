@@ -2,7 +2,8 @@ import sqlite3
 
 
 def create_connection(db_file: str) -> sqlite3.Connection:
-    """create a database connection to the SQLite database specified by db_file
+    """
+    create a database connection to the SQLite database specified by db_file
     :param db_file: database file
     :return: Connection object or None
     """
@@ -15,7 +16,8 @@ def create_connection(db_file: str) -> sqlite3.Connection:
 
 
 def init_db(conn: sqlite3.Connection) -> None:
-    """create tables in the database
+    """
+    create tables in the database
     :param conn: Connection object
     """
     create_tracks_table = """
