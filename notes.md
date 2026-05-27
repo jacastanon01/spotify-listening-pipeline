@@ -4,7 +4,7 @@
 
 Spotify listening data was requested from spotify and downloaded onto my machine locally after spotify processed the request after a couple days. Each year of podcast and song listening data lives in its own json file, with a structure that includes a timestamp, what song/episode, how long it was played, etc...
 
-Originally I wanted to include podcast and track data, but decided to simplify it when I was designing the schema. 
+Originally I wanted to include podcast and track data, but decided to simplify it when I was designing the schema.
 
 ### Schema
 
@@ -12,6 +12,8 @@ To avoid over-eningeering, I wanted to use this project to refresh my memory on 
 
 ![Spotify schema](spotify_schema.png)
 > The `streams` table contains a foreign key to the `track_uri` creating a many-to-one relationship. There can only be one event in time, but I can listen to the same track over and over. For this reason, `track_uri` is a row in both tables while the `tracks` exist as its own piece of information within the database.
+
+Minor note: This is just the design, but the order of the fields matter when creating the dataclasses that will feed the data into the table. To simplify the code, I used the method `astuple()` which represents each field and value as a list of tuples. Because of this, the order of the rows and fields must match.
 
 The database consists of two tables: one for what track was listened to and one for the event. Two years ago when I orginally wanted to do this project, I inflicted paralysis by analysis on myself designing the schema and how the data should interact with each other. I knew I wanted to eventually use the spotify API to add songs to the database so the design was paramount in my mind. After some time (and help from Claude AI), I opted for a simplier approach tracking only the what and when. The `tracks` table consists of relevant information related to the song and the `streams` table includes when it was listened to, for how long, was it skipped and why.
 
