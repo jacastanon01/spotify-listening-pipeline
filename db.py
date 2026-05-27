@@ -31,7 +31,7 @@ def init_db(conn: sqlite3.Connection) -> None:
     create_streams_table = """
     CREATE TABLE IF NOT EXISTS streams (
         id INTEGER PRIMARY KEY,
-        ts TEXT,
+        ts TEXT NOT NULL,
         ms_played INTEGER NOT NULL,
         skipped BOOLEAN,
         reason_start TEXT,
