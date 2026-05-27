@@ -1,4 +1,5 @@
 import sqlite3
+from models import Track, Stream
 
 
 def create_connection(db_file: str) -> sqlite3.Connection:
@@ -7,7 +8,6 @@ def create_connection(db_file: str) -> sqlite3.Connection:
     :param db_file: database file
     :return: Connection object or None
     """
-    conn = None
     try:
         conn = sqlite3.connect(db_file)
         return conn
@@ -47,3 +47,47 @@ def init_db(conn: sqlite3.Connection) -> None:
         conn.commit()
     except sqlite3.Error as e:
         raise RuntimeError(f"Error initializing database: {e}")
+
+
+def insert_track(conn: sqlite3.Connection, track: Track) -> None:
+    """
+    Insert a track into the tracks table
+    :param conn: Connection object
+    :param track: Track object
+    """
+    sql = """
+    INSERT OR IGNORE INTO tracks(uri, name, artist, album)
+    VALUES(?, ?, ?, ?);
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql, (track.uri, track.name, track.artist, track.album))
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Error inserting track: {e}")
+
+
+def insert_stream(conn: sqlite3.Connection, stream: Stream) -> None:
+    """
+    Insert a stream into the streams table
+    :param conn: Connection object
+    :param stream: Stream object
+    """
+    sql = """
+    INSERT OR IGNORE INTO streams(ts, ms_played, skipped, reason_start, reason_end, track_uri)
+    VALUES(?, ?, ?, ?, ?, ?);
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            sql,
+            (
+                stream.ts,
+                stream.ms_played,
+                stream.skipped,
+                stream.reason_start,
+                stream.reason_end,
+                stream.track_uri,
+            ),
+        )
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Error inserting stream: {e}")
