@@ -1,5 +1,6 @@
 import sqlite3
 from models import Track, Stream
+from dataclasses import astuple
 
 
 def create_connection(db_file: str) -> sqlite3.Connection:
@@ -61,7 +62,7 @@ def insert_track(conn: sqlite3.Connection, track: Track) -> None:
     """
     try:
         cursor = conn.cursor()
-        cursor.execute(sql, (track.uri, track.name, track.artist, track.album))
+        cursor.execute(sql, astuple(track))
     except sqlite3.Error as e:
         raise RuntimeError(f"Error inserting track: {e}")
 
@@ -78,16 +79,6 @@ def insert_stream(conn: sqlite3.Connection, stream: Stream) -> None:
     """
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            sql,
-            (
-                stream.ts,
-                stream.ms_played,
-                stream.skipped,
-                stream.reason_start,
-                stream.reason_end,
-                stream.track_uri,
-            ),
-        )
+        cursor.execute(sql, astuple(stream))
     except sqlite3.Error as e:
         raise RuntimeError(f"Error inserting stream: {e}")
