@@ -2,6 +2,8 @@ from models import Stream, Track
 from pipeline import convert_to_dataclasses, is_track
 from typing import Any
 
+import pytest
+
 mock_record: dict[str, Any] = {
     "ts": "2026-05-08T17:26:43Z",
     "platform": "ios",
@@ -60,3 +62,21 @@ def test_convert_to_dataclasses():
     )
     result = convert_to_dataclasses(mock_record)
     assert result == (expected_track, expected_stream)
+
+
+def test_missing_track_name_raises():
+    invalid_track_name: dict[str, Any] = {
+        **mock_record,
+        "master_metadata_track_name": None,
+    }
+    with pytest.raises(ValueError):
+        convert_to_dataclasses(invalid_track_name)
+
+
+def test_missing_ms_played_raises():
+    invalid_ms_played: dict[str, Any] = {
+        **mock_record,
+        "ms_played": None,
+    }
+    with pytest.raises(ValueError):
+        convert_to_dataclasses(invalid_ms_played)

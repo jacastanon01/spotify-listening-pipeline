@@ -32,6 +32,23 @@ def convert_to_dataclasses(record: dict[str, Any]) -> Tuple[Track, Stream]:
     :param record: A dictionary representing a single data item loaded from the JSON file.
     :return: A tuple containing a Track dataclass instance and a Stream dataclass instance.
     """
+    required_fields = {
+        "uri": record.get("spotify_track_uri"),
+        "name": record.get("master_metadata_track_name"),
+        "artist": record.get("master_metadata_album_artist_name"),
+        "album": record.get("master_metadata_album_album_name"),
+        "ts": record.get("ts"),
+        "ms_played": record.get("ms_played"),
+    }
+
+    for k, v in required_fields.items():
+        if k == "ms_played":
+            if v is None:
+                raise ValueError(f"Required field missing: {k}")
+        else:
+            if not v:
+                raise ValueError(f"Required field missing: {k}")
+
     track = Track(
         uri=record["spotify_track_uri"],
         name=record["master_metadata_track_name"],
