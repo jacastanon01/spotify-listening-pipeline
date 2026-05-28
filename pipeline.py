@@ -21,7 +21,7 @@ def is_track(item: dict[str, Any]) -> bool:
     :param item: A dictionary representing a single data item loaded from the JSON file.
     :return: True if the item contains track information, False otherwise.
     """
-    if item.get("spotify_track_uri") is not None:
+    if item.get("spotify_track_uri"):
         return True
     return False
 
