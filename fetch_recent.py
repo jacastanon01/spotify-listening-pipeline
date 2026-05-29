@@ -50,7 +50,7 @@ def transform(item: dict[str, Any]) -> tuple[Track, Stream]:
     track_album = track_obj.get("album", {})
     track_artists_list = track_obj.get("artists", [])
     album_name = track_album.get("name")
-    played_at = track_obj.get("played_at")
+    played_at = item.get("played_at")
 
     # Validate
     if (
@@ -59,6 +59,7 @@ def transform(item: dict[str, Any]) -> tuple[Track, Stream]:
         or not track_uri
         or not album_name
         or not track_artists_list
+        or not played_at
     ):
         raise ValueError("Missing critical track data")
 
