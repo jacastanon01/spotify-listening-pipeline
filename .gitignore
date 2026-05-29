@@ -3,3 +3,4 @@ venv/
 __pycache__
 .pytest_cache
 listening_history.db
+notes-local.md
