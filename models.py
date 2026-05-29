@@ -12,7 +12,7 @@ class Track:
 @dataclass
 class Stream:
     ts: str
-    ms_played: int
+    ms_played: int | None
     skipped: bool | None
     reason_start: str | None
     reason_end: str | None
