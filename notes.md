@@ -34,7 +34,7 @@ Two normalized tables connected by a foreign key relationship.
 **streams** — one row per listening event
 - `id` (auto-generated primary key)
 - `ts`
-- `ms_played`
+- `ms_played` (nullable)
 - `skipped` (nullable)
 - `reason_start` (nullable)
 - `reason_end` (nullable)
