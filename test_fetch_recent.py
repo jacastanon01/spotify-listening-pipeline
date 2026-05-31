@@ -1,9 +1,11 @@
 import copy
+from unittest import result
 
 import pytest
 
 from fetch_recent import transform
 from models import Track, Stream
+from fetch_recent import save_cursor, load_cursor
 
 mock_valid_item = {
     "played_at": "2026-05-29T14:34:38Z",
@@ -52,3 +54,17 @@ def test_invalid_played_at():
 
     with pytest.raises(ValueError):
         transform(invalid_ts_data)
+
+
+def test_save_and_load_cursor(tmp_path):
+    cursor_file = tmp_path / ".spotify_cursor"
+    ts = "2026-05-08T17:26:43Z"
+    save_cursor(ts, str(cursor_file))
+    result = load_cursor(str(cursor_file))
+    assert result == ts
+
+
+def test_load_cursor_missing_file(tmp_path):
+    cursor_file = tmp_path / ".spotify_cursor_none"
+    result = load_cursor(str(cursor_file))
+    assert result is None
