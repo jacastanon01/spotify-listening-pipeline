@@ -4,7 +4,7 @@ import dotenv
 import spotipy
 
 from spotipy.oauth2 import SpotifyOAuth
-from datetime import datetime, timezone
+from datetime import datetime
 
 from db import create_connection, insert_stream, insert_track
 from models import Stream, Track
