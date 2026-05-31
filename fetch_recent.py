@@ -8,7 +8,6 @@ from datetime import datetime
 
 from db import create_connection, insert_stream, insert_track
 from models import Stream, Track
-from pipeline import is_track
 
 dotenv.load_dotenv()
 
@@ -22,20 +21,30 @@ def iso_to_unix_ms(ts: str) -> int:
     return int(dt.timestamp() * 1000)
 
 
-def init_spotipy() -> spotipy.Spotify:
+def init_spotipy() -> spotipy.Spotify | None:
     """
     Uses spotipy to initilize and return authorized spotify client to use
     """
-    sp = spotipy.Spotify(
-        auth_manager=SpotifyOAuth(
-            client_id=os.getenv("SPOTIPY_CLIENT_ID"),
-            client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-            redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI"),
-            scope="user-read-recently-played",
-            cache_path="./.spotify_cache",
-        )
-    )
-    return sp
+    try:
+        client_id = os.getenv("SPOTIPY_CLIENT_ID")
+        client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
+        redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
+
+        if client_id and client_secret and redirect_uri:
+            sp = spotipy.Spotify(
+                auth_manager=SpotifyOAuth(
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    redirect_uri=redirect_uri,
+                    scope="user-read-recently-played",
+                    cache_path="./.spotify_cache",
+                )
+            )
+            return sp
+        else:
+            raise Exception("Error verifying spotify credentials")
+    except Exception as e:
+        RuntimeError(f"Failed to intilize Spotify client: {e}")
 
 
 def fetch_recent(
@@ -46,7 +55,10 @@ def fetch_recent(
     :param sp: Authenticated spotipy client
     :return: JSON Response from Spotify API endpoint
     """
-    return sp.current_user_recently_played(after=after)
+    try:
+        return sp.current_user_recently_played(after=after)
+    except spotipy.exceptions.SpotifyException as e:
+        raise RuntimeError(f"Spotify API error: {e}")
 
 
 def transform(item: dict[str, Any]) -> tuple[Track, Stream]:
@@ -63,17 +75,19 @@ def transform(item: dict[str, Any]) -> tuple[Track, Stream]:
     track_album = track_obj.get("album", {})
     track_artists_list = track_obj.get("artists", [])
     album_name = track_album.get("name")
-    played_at = item.get("played_at")
+    played_at = item.get("played_at", None)
+
+    validate_items = [
+        track_obj,
+        track_name,
+        track_uri,
+        album_name,
+        track_artists_list,
+        played_at,
+    ]
 
     # Validate
-    if (
-        not track_obj
-        or not track_name
-        or not track_uri
-        or not album_name
-        or not track_artists_list
-        or not played_at
-    ):
+    if not all(validate_items):
         raise ValueError("Missing critical track data")
 
     # Transform
@@ -92,7 +106,7 @@ def transform(item: dict[str, Any]) -> tuple[Track, Stream]:
         album=album_name,
     )
     stream = Stream(
-        ts=played_at,
+        ts=played_at,  # type: ignore
         ms_played=None,
         skipped=None,
         reason_start=None,
@@ -121,24 +135,38 @@ def load_cursor(cursor_cache) -> str | None:
         with open(cursor_cache, "r") as f:
             cursor = f.read()
         return cursor
-    except FileNotFoundError as e:
-        print(f"Error loading from {cursor_cache}: {e}")
+    except FileNotFoundError:
         return None
 
 
-def main() -> None:
+def run() -> None:
     sp = init_spotipy()
     cursor = load_cursor(".spotify_cursor")
-    results = fetch_recent(sp, after=iso_to_unix_ms(cursor) if cursor else None)
-    if results:
-        items = results["items"]
-        conn = create_connection("listening_history.db")
-        for item in items:
-            if is_track(item):
-                track, stream = transform(item)
-                insert_track(conn, track)
-                insert_stream(conn, stream)
-        conn.commit()
-        if items:
-            save_cursor(items[0]["played_at"], ".spotify_cursor")
-        conn.close()
+
+    if sp:
+        results = fetch_recent(sp, after=iso_to_unix_ms(cursor) if cursor else None)
+        items = results.get("items") if results else None
+        if results and items:
+            print(f"Fetched {len(items)} items from Spotify")
+            conn = create_connection("listening_history.db")
+            try:
+                for item in items:
+                    if item.get("track", {}).get("type") == "track":
+                        track, stream = transform(item)
+                        insert_track(conn, track)
+                        insert_stream(conn, stream)
+                        print(
+                            f"Inserted: {track.name} by {track.artist} played at {stream.ts}"
+                        )
+                conn.commit()
+                if items:
+                    save_cursor(
+                        items[0]["played_at"], ".spotify_cursor"
+                    )  # spotify returns most recent tracks first. Log the time so we don't log same listening data twice
+                    print(f"Cursor saved: {items[0]['played_at']}")
+            finally:
+                conn.close()
+
+
+if __name__ == "__main__":
+    run()
