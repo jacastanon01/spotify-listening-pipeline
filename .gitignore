@@ -6,3 +6,4 @@ listening_history.db
 notes-local.md
 .env
 .spotify_cache
+.spotify_cursor
