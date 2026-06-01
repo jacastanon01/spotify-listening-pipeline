@@ -4,6 +4,7 @@ __pycache__
 .pytest_cache
 listening_history.db
 notes-local.md
+notes.md
 .env
 .spotify_cache
 .spotify_cursor
