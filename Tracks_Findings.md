@@ -6,6 +6,10 @@ As fun as building out the database was, I've found more utility getting my hand
 
 ## The Shape of the Data
 
+The first few years after creating my Spotify account in 2013, I used the service sparsely to listen to music. I remember being annoyed by the ads and my car had a CD player so I would buy CD's and download the mp3s onto my computer where I would then burn custom mixes. I would keep a *thick* notebook of CD's in my car so I had the perfect mix of music for every ocassion. Remember those days? Good times, good times.
+
+Oh yeah, the data. So here I qeuried how often a track was played per year. I am not disecting the time played (which Spotfy presents as `ms_played` in the JSON), but rather counting the total streaming events per year. This tells you which years were spent mostly using Spotify to listen to songs.
+
 | year | plays |
 |------|-------|
 | 2018 | 14725 |
@@ -22,106 +26,109 @@ As fun as building out the database was, I've found more utility getting my hand
 | 2013 | 17    |
 | 2015 | 10    |
 
-The first few years after creating my Spotify account in 2013, I used the service sparsely to listen to music. I remember being annoyed by the ads and my car had a CD player so I would buy CD's and download the mp3s onto my machine where I would then burn custom mixes. I would keep a *thick* notebook of CD's in my car so I had the perfect mix of music for every ocassion. Remember those days? Good times, good times.
+There are two periods where I heavily relied on Spotify. The first spans 2018 to 2020, peaking in 2018 with nearly 15,000 plays. Listening stayed elevated through 2019 and into 2020, likely sustained by the pandemic and time at home, before declining through 2021 and 2022. The second period begins around 2024 and continues into 2025, though it hasn't matched the earlier highs. 2026 is likely to surpass 10,000 track streams, but since 2026 is only halfway represented in the dataset, I'll leave it as is rather than project forward.
 
-There are two periods where I heavily relied upon Spotify to stream music. The years of 2018-2020 and 2023-2026 (projected). Since the dataset only captures listening habits from the first half of 2026, I expect that number to climb and match the previous 2 years. I have noticed Spotify is more often than not the platform I use to listen to music and I am not alone:
+I have noticed Spotify is more often than not the platform I use to listen to music and I am not alone:
 > 73% of the US population (aged over 12) listen to online audio every week... 35% of the population listened to Spotify in [March 2026]
 [source](https://musically.com/2025/03/24/report-offers-us-listening-stats-for-spotify-and-its-rivals/)
 
-With this in mind, I was curious how my previous peak compared to more recent years. Spotify is notorious for obfuscating their metrics so there was a mismatch in the JSON for the first era, notably they did not track how often a song was skipped until 2022. Regardless, I still think this dataset tells a story worth telling.
+With this in mind, I was curious how my previous peak compared to more recent years. Spotify is notorious for obfuscating their metrics so there was a mismatch in the JSON for the first era, notably they did not track how often a song was skipped until 2022.
 
 ---
 
 ## Two Distinct Eras
 
-The first era is defined by finally getting spotify premium so no more ads! As you can see, I began utlizing the platform much more to listen to music. This was always my introduction to recommendation algorithms where I would await my Dicover Weekly playlist to update. I enjoyed listening to old favorites like Interpol, Radiohead, Logic and Kid Cudi while discovering new artists like J Balvin and Frank Ocean. As you can see I became a big fan and had *Blonde* on repeat during that time.
+The first era is defined by finally getting spotify premium so no more ads! As you can see, I began utlizing the platform much more to listen to music. This was always my introduction to recommendation algorithms where I would await my Dicover Weekly playlist to update. I enjoyed listening to old favorites like Interpol, Radiohead, Logic and Kendrick Lamar while discovering new artists like J Balvin and Frank Ocean. As you can see I became a big fan of Mr. Ocean and had *Blonde* on repeat during that time.
 
 **Top Artists 2018-2020**
 
-|     artist      | plays |
-|-----------------|-------|
-| Frank Ocean     | 460   |
-| Interpol        | 344   |
-| BROCKHAMPTON    | 309   |
-| Kanye West      | 243   |
-| Glass Animals   | 183   |
-| Radiohead       | 167   |
-| Pinback         | 154   |
-| Logic           | 154   |
-| EARTHGANG       | 142   |
-| The Beatles     | 130   |
-| Deftones        | 130   |
-| KIDS SEE GHOSTS | 120   |
-| TV On The Radio | 115   |
-| Allan Rayman    | 115   |
-| J Balvin        | 112   |
-
+|      artist      | plays | minutes_played |
+|------------------|-------|----------------|
+| Frank Ocean      | 539   | 1097.7         |
+| Interpol         | 362   | 587.3          |
+| Kanye West       | 300   | 516.3          |
+| Logic            | 220   | 442.1          |
+| EARTHGANG        | 154   | 423.1          |
+| BROCKHAMPTON     | 330   | 417.2          |
+| Talking Heads    | 129   | 294.2          |
+| Childish Gambino | 146   | 281.4          |
+| J Balvin         | 159   | 261.5          |
+| Radiohead        | 187   | 261.2          |
+| Deftones         | 147   | 254.5          |
+| Glass Animals    | 224   | 253.5          |
+| Kendrick Lamar   | 110   | 239.7          |
+| KIDS SEE GHOSTS  | 128   | 233.9          |
+| Pinback          | 175   | 230.1          |
 
 **Top Tracks 2018-2020**
 
-|         name         |     artist      | plays |
-|----------------------|-----------------|-------|
-| Pink + White         | Frank Ocean     | 45    |
-| Baby                 | Ariel Pink      | 44    |
-| White Ferrari        | Frank Ocean     | 44    |
-| Liquor Sto'          | EARTHGANG       | 41    |
-| He Can Only Hold Her | Amy Winehouse   | 37    |
-| REEL IT IN           | Aminé           | 37    |
-| Plug Walk            | Rich The Kid    | 36    |
-| Don't Move           | Phantogram      | 35    |
-| Moon River           | Frank Ocean     | 35    |
-| anemone              | slenderbodies   | 35    |
-| Cudi Montage         | KIDS SEE GHOSTS | 34    |
-| Naive                | The Kooks       | 34    |
-| CAROUSEL             | Aries           | 33    |
-| This Modern Love     | Bloc Party      | 32    |
-| Leif Erikson         | Interpol        | 31    |
+|                       name                        |         artist          | plays | minutes_played |
+|---------------------------------------------------|-------------------------|-------|----------------|
+| Liquor Sto'                                       | EARTHGANG               | 44    | 220.9          |
+| White Ferrari                                     | Frank Ocean             | 46    | 145.6          |
+| Baby                                              | Ariel Pink              | 50    | 118.0          |
+| Reborn                                            | KIDS SEE GHOSTS         | 30    | 100.3          |
+| Love Again                                        | Ta-ku                   | 30    | 95.3           |
+| In The Fade/Feel Good Hit Of The Summer (Reprise) | Queens of the Stone Age | 29    | 94.2           |
+| Simulation (feat. Swamp Dogg, Justin Vernon)      | Naeem                   | 22    | 92.0           |
+| Pink Matter                                       | Frank Ocean             | 33    | 90.9           |
+| To Zion (feat. Carlos Santana)                    | Ms. Lauryn Hill         | 29    | 90.1           |
+| Missed Calls                                      | EARTHGANG               | 34    | 87.1           |
+| Pink + White                                      | Frank Ocean             | 54    | 85.5           |
+| He Can Only Hold Her                              | Amy Winehouse           | 43    | 85.0           |
+| Addicted                                          | JMSN                    | 30    | 84.3           |
+| Provider                                          | Frank Ocean             | 40    | 80.2           |
+| Afro Blue                                         | Robert Glasper          | 28    | 79.9           |
 
-The next peak of my spotify listening came in 2024 and is going strong to this day. I began working on an assembly line where we were permitted to use headphones. During this time, I also began to appreicate genres that that I had judged pre-maturaly. I never though metal music would speak to me, but what can I say, when I get obssessed with something it takes over.
+EARTHGANG was another artist I discovered during this time and took a liking to. The top 3 Frank Ocean songs come out to over 300 minutes, which don't even cover a quarter of my listening time for him during this period.
 
-
-**Top Artists 2023-2026**
-
-|      artist       | plays |
-|-------------------|-------|
-| Death             | 481   |
-| Carcass           | 453   |
-| At The Gates      | 415   |
-| Deafheaven        | 409   |
-| Greet Death       | 330   |
-| Caroline Polachek | 254   |
-| Radiohead         | 253   |
-| Incubus           | 253   |
-| Arcade Fire       | 249   |
-| Slow Pulp         | 236   |
-| King Krule        | 226   |
-| Show Me the Body  | 222   |
-| Björk             | 217   |
-| Mount Kimbie      | 211   |
-| Justin Bieber     | 204   |
+The next peak of my Spotify listening journey came in 2024 and 2025. I began working on an assembly line where we were permitted to use headphones. During this time, I also began to appreicate genres that that I had judged pre-maturely. I never though metal music would speak to me, but what can I say, when I get obssessed with something it takes over.
 
 
-**Top Tracks 2024-2026**
+**Top Artists 2023-2025**
 
-|         name          |      artist       | plays |
-|-----------------------|-------------------|-------|
-| Falling Apart         | Slow Pulp         | 82    |
-| Under A Serpent Sun   | At The Gates      | 76    |
-| Mad Riches            | Sonder            | 63    |
-| Do You Feel Nothing?  | Greet Death       | 61    |
-| Pretty In Possible    | Caroline Polachek | 60    |
-| Slaughter Of The Soul | At The Gates      | 56    |
-| Symbolic              | Death             | 56    |
-| Seaforth              | King Krule        | 50    |
-| Where Am I?           | Title Fight       | 49    |
-| Free Mind             | Tems              | 45    |
-| At Home               | Slow Pulp         | 44    |
-| Avril 14th            | Aphex Twin        | 44    |
-| ALL I CAN TAKE        | Justin Bieber     | 43    |
-| Hit Me Where It Hurts | Caroline Polachek | 43    |
-| Into The Dead Sky     | At The Gates      | 43    |
+|      artist       | plays | minutes_played |
+|-------------------|-------|----------------|
+| Deafheaven        | 399   | 1594.1         |
+| Death             | 405   | 1238.9         |
+| Carcass           | 411   | 1085.8         |
+| At The Gates      | 392   | 836.5          |
+| Greet Death       | 313   | 636.0          |
+| Slow Pulp         | 225   | 487.1          |
+| Arcade Fire       | 238   | 453.6          |
+| King Krule        | 224   | 446.8          |
+| Caroline Polachek | 252   | 440.3          |
+| Radiohead         | 208   | 415.1          |
+| Mount Kimbie      | 192   | 378.1          |
+| Incubus           | 204   | 377.6          |
+| Björk             | 209   | 367.7          |
+| Hum               | 153   | 354.1          |
+| Minus the Bear    | 197   | 353.4          |
 
-What is interesting about this period is how much more diverse my listening was. I discovered an appreciation for metal (At the Gates has three tracks in my top ten and Death was my most listened to artist), but there's also Justin Bieber (another artist I had previously not given a chance), Aphex Twin and Caroline Polachek. I do think there is at least one song from every genre that someone will appreciate if they keep an open mind. This insight is backed up by the data:
+
+**Top Tracks 2024-2025**
+
+|                      name                       |      artist       | plays | minutes_played |
+|-------------------------------------------------|-------------------|-------|----------------|
+| Falling Apart                                   | Slow Pulp         | 78    | 237.6          |
+| Under A Serpent Sun                             | At The Gates      | 69    | 218.7          |
+| Symbolic                                        | Death             | 44    | 197.8          |
+| Do You Feel Nothing?                            | Greet Death       | 56    | 176.6          |
+| Sea of Love                                     | The National      | 36    | 127.1          |
+| Spring Is Coming With a Strawberry in the Mouth | Roger Doyle       | 24    | 126.2          |
+| I Want to Be with You                           | Sadness           | 32    | 125.7          |
+| Pretty In Possible                              | Caroline Polachek | 60    | 124.2          |
+| Dream House                                     | Deafheaven        | 19    | 123.4          |
+| Seaforth                                        | King Krule        | 49    | 117.4          |
+| Corporal Jigsore Quandary                       | Carcass           | 27    | 114.4          |
+| Sunbather                                       | Deafheaven        | 26    | 114.4          |
+| Pink Elephant                                   | Arcade Fire       | 33    | 112.8          |
+| We Were Born The Mutants Again With Leafling    | of Montreal       | 29    | 110.0          |
+| Canary Yellow                                   | Deafheaven        | 13    | 107.2          |
+
+Deafheaven's number of `plays` in the artists table may seem low compared to the other top 3 metal groups. They are inspired by black metal and that means long, epic songs often spanning ten minutes total. Another interesting note, I first heard "Spring Is Coming With a Strawberry in the Mouth" by Caroline Polachek on her album. When I found out it was a cover, I listened to the original by Roger Doyle, and apparantly liked it much more than Caroline's version. Besides the metal and synth-pop, there is a decent amount of time listening to an old favorite: indie rock.
+
+What is interesting about this period is how much more diverse my listening was. My top 4 most listened to artists are metal bands, but there's also Bjork, Arcade Fire and King Krule in there. I don't think it's a coincedence for that diversity:
 
 | year | unique_artists | total_plays | plays_per_artist |
 |------|----------------|-------------|------------------|
@@ -139,7 +146,7 @@ What is interesting about this period is how much more diverse my listening was.
 | 2013 | 9              | 17          | 1.9              |
 | 2015 | 10             | 10          | 1.0              |
 
-`plays_per_artist` represents the time spent on one particular artist. In more recent years, I have given more artists an opportunity to catch my ear.
+`plays_per_artist` represents the breadth of artists listened to in a particular year. In more recent years, I have given more artists an opportunity to catch my ear.
 
 ---
 
@@ -172,36 +179,7 @@ What is interesting about this period is how much more diverse my listening was.
 | 11   | 294   |
 | 10   | 250   |
 
-Interestingly, I seem to listen late at night. My sleeping habits have matured as I entered my thirties, I think. Let's see how this looks by year:
-
-| hour | plays |
-|------|-------|
-| 01   | 2120  |
-| 02   | 1927  |
-| 16   | 1624  |
-| 17   | 1576  |
-| 15   | 1454  |
-| 18   | 1425  |
-| 03   | 1413  |
-| 19   | 1232  |
-| 21   | 1205  |
-| 00   | 1196  |
-| 22   | 1193  |
-| 20   | 1192  |
-| 14   | 1158  |
-| 04   | 1088  |
-| 13   | 1074  |
-| 23   | 1030  |
-| 05   | 806   |
-| 12   | 506   |
-| 06   | 429   |
-| 07   | 290   |
-| 08   | 117   |
-| 11   | 110   |
-| 09   | 37    |
-| 10   | 15    |
-
-<!-- RUN NEW QUERY COMPARING HOURS LISTENED GROUPED BY YEAR -->
+Late afternoons and late nights.
 
 ---
 
@@ -225,25 +203,58 @@ I seem to know what I want to listen to rather than letting playlists play the n
 
 ## All Time Favorites
 
-|                  name                   |      artist      | plays | skip_rate_pct |
-|-----------------------------------------|------------------|-------|---------------|
-| Pink + White                            | Frank Ocean      | 72    | 15.3          |
-| White Ferrari                           | Frank Ocean      | 70    | 8.6           |
-| Evil                                    | Interpol         | 68    | 14.7          |
-| Leif Erikson                            | Interpol         | 68    | 11.8          |
-| Baby                                    | Ariel Pink       | 64    | 7.8           |
-| He Can Only Hold Her                    | Amy Winehouse    | 62    | 14.5          |
-| Friendship (Is A Small Boat In A Storm) | Chicano Batman   | 58    | 6.9           |
-| Idioteque                               | Radiohead        | 58    | 12.1          |
-| Chop Suey!                              | System Of A Down | 56    | 10.7          |
-| REEL IT IN                              | Aminé            | 55    | 16.4          |
-| Tennessee                               | Allan Rayman     | 55    | 9.1           |
-| Liquor Sto'                             | EARTHGANG        | 54    | 9.3           |
-| anemone                                 | slenderbodies    | 54    | 5.6           |
-| Youth                                   | Glass Animals    | 53    | 9.4           |
-| Crew (feat. Brent Faiyaz & Shy Glizzy)  | GoldLink         | 52    | 0.0           |
+This is genuinely one of the more fun parts of this project. Finding ways to measure how a track is my favorite demonstrates the importance of good data modeling. At first, I used the averages of the skipped fields (which is a boolean(which in sqlite is represent by a 1 or 0)) to determine how often a track was skipped, but looking at my data that is an unreliable field to rely on.
 
-These tracks heavily favor top songs listened to pre-2022 since the skipped paramter is not consistent.
+| year | total_streams | null_skipped | not_skipped | skipped | skip_rate_pct |
+|------|---------------|--------------|-------------|---------|---------------|
+| 2013 | 17            | 0            | 10          | 7       | 41.2          |
+| 2015 | 10            | 0            | 2           | 8       | 80.0          |
+| 2016 | 67            | 0            | 67          | 0       | 0.0           |
+| 2017 | 3628          | 0            | 3628        | 0       | 0.0           |
+| 2018 | 14725         | 0            | 14725       | 0       | 0.0           |
+| 2019 | 13296         | 0            | 13296       | 0       | 0.0           |
+| 2020 | 8315          | 0            | 8315        | 0       | 0.0           |
+| 2021 | 5145          | 0            | 5145        | 0       | 0.0           |
+| 2022 | 8619          | 0            | 7781        | 838     | 9.7           |
+| 2023 | 6192          | 0            | 1723        | 4469    | 72.2          |
+| 2024 | 7909          | 0            | 2873        | 5036    | 63.7          |
+| 2025 | 11165         | 0            | 3773        | 7392    | 66.2          |
+| 2026 | 5143          | 23           | 1539        | 3581    | 69.9          |
+
+One of the peaks of my listening history (2018-2019) currently would've had a skip rate of 0, which would skew the findings to be biased toward songs listened to during that period of time. There must be another way. Fortunantly, I added the `reason_end` and `reason_start` fields to my schema and they came in handy here. As we saw earlier, I tend to be deliberate with how I chose my tracks. Here are songs that have at least half an hour of playing time with the reason starting being a 'clickrow', which means I chose the track and the reason ending being 'trackdone', which indicates I let the track play to completion without interruption. Ordered by the minutes played
+
+|                      name                       |      artist       | minutes_played |
+|-------------------------------------------------|-------------------|----------------|
+| Symbolic                                        | Death             | 83.2           |
+| Falling Apart                                   | Slow Pulp         | 62.4           |
+| What Once Was                                   | Her's             | 56.6           |
+| Dream House                                     | Deafheaven        | 55.4           |
+| White Ferrari                                   | Frank Ocean       | 48.9           |
+| Do You Feel Nothing?                            | Greet Death       | 48.8           |
+| Pretty In Possible                              | Caroline Polachek | 41.2           |
+| Evil                                            | Interpol          | 40.4           |
+| Obstacle 2                                      | Interpol          | 40.4           |
+| Unison                                          | Björk             | 39.4           |
+| Under A Serpent Sun                             | At The Gates      | 39.2           |
+| Accept Yourself - David Jensen Session 25/08/83 | The Smiths        | 38.3           |
+| Pachuca Sunrise                                 | Minus the Bear    | 38.0           |
+| Liquor Sto'                                     | EARTHGANG         | 37.2           |
+| Man Of Oil                                      | Animal Collective | 37.1           |
+| Nights                                          | Frank Ocean       | 36.3           |
+| Nikes                                           | Frank Ocean       | 34.7           |
+| Story to Tell                                   | Death             | 34.4           |
+| ALL I CAN TAKE                                  | Justin Bieber     | 34.2           |
+| Dreams - 2004 Remaster                          | Fleetwood Mac     | 34.2           |
+| The Lightning I                                 | Arcade Fire       | 34.2           |
+| Sea of Love                                     | The National      | 33.4           |
+| Corporal Jigsore Quandary                       | Carcass           | 33.3           |
+| Old Friends                                     | Pinegrove         | 33.3           |
+| Arcanum                                         | Show Me the Body  | 31.7           |
+| Don't Dream It's Over                           | Crowded House     | 31.7           |
+| Wait for It                                     | Leslie Odom Jr.   | 31.6           |
+| Keep On Rotting in the Free World               | Carcass           | 30.6           |
+| Reborn                                          | KIDS SEE GHOSTS   | 30.3           |
+| Ex-Factor                                       | Ms. Lauryn Hill   | 30.2           |
 
 ---
 
@@ -262,4 +273,4 @@ These tracks heavily favor top songs listened to pre-2022 since the skipped para
 | Make It Easy On Yourself      | The Walker Brothers | 30    | 63.3          |
 | New Person, Same Old Mistakes | Tame Impala         | 30    | 66.7          |
 
-These are tracks I tend to listen to frequently, but am often not in the mood when they come up during shuffle. You can see by the play_rate, I don't not enjoy them, but they are skipped more often than not. All of these tend to be post-2022 because the skipped feature was not measured in the data until that time.
+These are tracks I tend to listen to frequently, but am often not in the mood when they come up during shuffle. You can see by the play_rate, I don't not enjoy them, but they are skipped more often than not. All of these tend to be post-2023 because Spotify relably added skipping in the middle of 2022
