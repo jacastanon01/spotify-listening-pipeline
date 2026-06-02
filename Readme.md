@@ -1,6 +1,6 @@
 # Spotify Listening History Pipeline
 
-A personal data pipeline that transforms Spotify's exported listening history into a queryable local database. Built to understand my own listening habits and rediscover why I enjoy building things that mean something to me.
+A personal data pipeline that transforms Spotify's exported listening history into a queryable local database. Built to understand my own listening habits and rediscover why I enjoy building things that mean something to me. A full breakdown of findings is documented in [FINDINGS.md](./FINDINGS.md).
 
 ---
 
