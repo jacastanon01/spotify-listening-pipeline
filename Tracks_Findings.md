@@ -1,14 +1,14 @@
 # Exploring the data
 
-As fun as building out the database was, I've found more utility getting my hands dirty and learning what it says about my listening habits on Spotify. When I listen to music I tend to either put on a video from Youtube to play in the background or stream from Spotify. Perhaps, the youtube videos could be another project, but I don't want to get carried away dreaming, let's focus on the data I was able to import from Spotify and what it says. I created my account in 2013 so there is over ten years of data to parse!
+As fun as building out the database was, I've found more utility getting my hands dirty and learning what it says about my listening habits on Spotify. When I listen to music I tend to either put on a video from YouTube to play in the background or stream from Spotify. Perhaps, the YouTube videos could be another project, but I don't want to get carried away dreaming, let's focus on the data I was able to import from Spotify and what it says. I created my account in 2013 so there is over ten years of data to parse!
 
 ---
 
 ## The Shape of the Data
 
-The first few years after creating my Spotify account in 2013, I used the service sparsely to listen to music. I remember being annoyed by the ads and my car had a CD player so I would buy CD's and download the mp3s onto my computer where I would then burn custom mixes. I would keep a *thick* notebook of CD's in my car so I had the perfect mix of music for every ocassion. Remember those days? Good times, good times.
+The first few years after creating my Spotify account in 2013, I used the service sparsely to listen to music. I remember being annoyed by the ads and my car had a CD player so I would buy CD's and download the mp3s onto my computer where I would then burn custom mixes. I would keep a *thick* notebook of CD's in my car so I had the perfect mix of music for every occasion. Remember those days? Good times, good times.
 
-Oh yeah, the data. So here I qeuried how often a track was played per year. I am not disecting the time played (which Spotfy presents as `ms_played` in the JSON), but rather counting the total streaming events per year. This tells you which years were spent mostly using Spotify to listen to songs.
+Oh yeah, the data. So here I queried how often a track was played per year. I am not dissecting the time played (which Spotify presents as `ms_played` in the JSON), but rather counting the total streaming events per year. This tells you which years were spent mostly using Spotify to listen to songs.
 
 | year | plays |
 |------|-------|
@@ -38,7 +38,7 @@ With this in mind, I was curious how my previous peak compared to more recent ye
 
 ## Two Distinct Eras
 
-The first era is defined by finally getting spotify premium so no more ads! As you can see, I began utlizing the platform much more to listen to music. This was always my introduction to recommendation algorithms where I would await my Dicover Weekly playlist to update. I enjoyed listening to old favorites like Interpol, Radiohead, Logic and Kendrick Lamar while discovering new artists like J Balvin and Frank Ocean. As you can see I became a big fan of Mr. Ocean and had *Blonde* on repeat during that time.
+The first era is defined by finally getting Spotify premium so no more ads! As you can see, I began utilizing the platform much more to listen to music. This was always my introduction to recommendation algorithms where I would await my Discover Weekly playlist to update. I enjoyed listening to old favorites like Interpol, Radiohead, Logic and Kendrick Lamar while discovering new artists like J Balvin and Frank Ocean. As you can see I became a big fan of Mr. Ocean and had *Blonde* on repeat during that time.
 
 **Top Artists 2018-2020**
 
@@ -82,7 +82,7 @@ The first era is defined by finally getting spotify premium so no more ads! As y
 
 EARTHGANG was another artist I discovered during this time and took a liking to. The top 3 Frank Ocean songs come out to over 300 minutes, which don't even cover a quarter of my listening time for him during this period.
 
-The next peak of my Spotify listening journey came in 2024 and 2025. I began working on an assembly line where we were permitted to use headphones. During this time, I also began to appreicate genres that that I had judged pre-maturely. I never though metal music would speak to me, but what can I say, when I get obssessed with something it takes over.
+The next peak of my Spotify listening journey came in 2024 and 2025. I began working on an assembly line where we were permitted to use headphones. During this time, I also began to appreciate genres that that I had judged pre-maturely. I never though metal music would speak to me, but what can I say, when I get obsessed with something it takes over.
 
 
 **Top Artists 2023-2025**
@@ -126,9 +126,9 @@ The next peak of my Spotify listening journey came in 2024 and 2025. I began wor
 | We Were Born The Mutants Again With Leafling    | of Montreal       | 29    | 110.0          |
 | Canary Yellow                                   | Deafheaven        | 13    | 107.2          |
 
-Deafheaven's number of `plays` in the artists table may seem low compared to the other top 3 metal groups. They are inspired by black metal and that means long, epic songs often spanning ten minutes total. Another interesting note, I first heard "Spring Is Coming With a Strawberry in the Mouth" by Caroline Polachek on her album. When I found out it was a cover, I listened to the original by Roger Doyle, and apparantly liked it much more than Caroline's version. Besides the metal and synth-pop, there is a decent amount of time listening to an old favorite: indie rock.
+Deafheaven's number of `plays` in the artists table may seem low compared to the other top 3 metal groups. They are inspired by black metal and that means long, epic songs often spanning ten minutes total. Another interesting note, I first heard "Spring Is Coming With a Strawberry in the Mouth" by Caroline Polachek on her album. When I found out it was a cover, I listened to the original by Roger Doyle, and apparently liked it much more than Caroline's version. Besides the metal and synth-pop, there is a decent amount of time listening to an old favorite: indie rock.
 
-What is interesting about this period is how much more diverse my listening was. My top 4 most listened to artists are metal bands, but there's also Bjork, Arcade Fire and King Krule in there. I don't think it's a coincedence for that diversity:
+What is interesting about this period is how much more diverse my listening was. My top 4 most listened to artists are metal bands, but there's also Bjork, Arcade Fire and King Krule in there. I don't think it's a coincidence for that diversity:
 
 | year | unique_artists | total_plays | plays_per_artist |
 |------|----------------|-------------|------------------|
@@ -221,7 +221,7 @@ This is genuinely one of the more fun parts of this project. Finding ways to mea
 | 2025 | 11165         | 0            | 3773        | 7392    | 66.2          |
 | 2026 | 5143          | 23           | 1539        | 3581    | 69.9          |
 
-One of the peaks of my listening history (2018-2019) currently would've had a skip rate of 0, which would skew the findings to be biased toward songs listened to during that period of time. There must be another way. Fortunantly, I added the `reason_end` and `reason_start` fields to my schema and they came in handy here. As we saw earlier, I tend to be deliberate with how I chose my tracks. Here are songs that have at least half an hour of playing time with the reason starting being a 'clickrow', which means I chose the track and the reason ending being 'trackdone', which indicates I let the track play to completion without interruption. Ordered by the minutes played
+One of the peaks of my listening history (2018-2019) currently would've had a skip rate of 0, which would skew the findings to be biased toward songs listened to during that period of time. There must be another way. Fortunately, I added the `reason_end` and `reason_start` fields to my schema and they came in handy here. As we saw earlier, I tend to be deliberate with how I chose my tracks. Here are songs that have at least half an hour of playing time with the reason starting being a 'clickrow', which means I chose the track and the reason ending being 'trackdone', which indicates I let the track play to completion without interruption. Ordered by the minutes played
 
 |                      name                       |      artist       | minutes_played |
 |-------------------------------------------------|-------------------|----------------|
@@ -273,4 +273,4 @@ One of the peaks of my listening history (2018-2019) currently would've had a sk
 | Make It Easy On Yourself      | The Walker Brothers | 30    | 63.3          |
 | New Person, Same Old Mistakes | Tame Impala         | 30    | 66.7          |
 
-These are tracks I tend to listen to frequently, but am often not in the mood when they come up during shuffle. You can see by the play_rate, I don't not enjoy them, but they are skipped more often than not. All of these tend to be post-2023 because Spotify relably added skipping in the middle of 2022
+These are tracks I tend to listen to frequently, but am often not in the mood when they come up during shuffle. You can see by the play_rate, I don't not enjoy them, but they are skipped more often than not. All of these tend to be post-2023 because Spotify reliably added skipping in the middle of 2022.
