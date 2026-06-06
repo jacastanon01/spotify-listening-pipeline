@@ -1,5 +1,3 @@
-from tracemalloc import start
-
 import streamlit as st
 import sqlite3
 import pandas as pd
@@ -41,14 +39,15 @@ def get_top_tracks_by_year(_conn: sqlite3.Connection | None, start_year: int = 2
 overview, habits, phases = st.tabs(["Overview", "Habits", "Phases"])
 
 # OVERVIEW
-st.header("Music through the years")
-start_year, end_year = st.slider("Time Range(Yr)", 2013, 2026, (2013, 2026))
+with overview:
+    st.header("Music through the years")
+    start_year, end_year = st.slider("Time Range(Year)", 2013, 2026, (2013, 2026))
 
-time_df = get_minutes_by_year(conn, start_year, end_year)
-artist_df = get_top_artists_by_year(conn, start_year, end_year)
-tracks_df = get_top_tracks_by_year(conn, start_year, end_year)
+    time_df = get_minutes_by_year(conn, start_year, end_year)
+    artist_df = get_top_artists_by_year(conn, start_year, end_year)
+    tracks_df = get_top_tracks_by_year(conn, start_year, end_year)
 
-if time_df.empty:
-    st.warning(f"No listening history found between {start_year} and {end_year}")
-else:
-    st.line_chart(time_df, x="year", y="minutes_played")
+    if time_df.empty:
+        st.warning(f"No listening history found between {start_year} and {end_year}")
+    else:
+        st.line_chart(time_df, x="year", y="minutes_played")
