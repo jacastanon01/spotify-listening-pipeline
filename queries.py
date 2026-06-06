@@ -29,7 +29,7 @@ SELECT t.artist, t.name,
 FROM streams s 
 JOIN tracks t ON s.track_uri = t.uri
 WHERE CAST(strftime('%Y', s.ts) AS INTEGER) BETWEEN ? AND ?
-GROUP BY t.name
+GROUP BY t.uri
 ORDER BY minutes_played DESC
 LIMIT 15;
 """
