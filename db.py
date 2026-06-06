@@ -3,14 +3,19 @@ from models import Track, Stream
 from dataclasses import astuple
 
 
-def create_connection(db_file: str) -> sqlite3.Connection:
+def create_connection(db_file: str, check_same_thread: bool = True) -> sqlite3.Connection:
     """
     create a database connection to the SQLite database specified by db_file
     :param db_file: database file
+    :param check_same_thread: Boolean that flags whether connection is being ued for data ingestion or data retrieval 
     :return: Connection object or None
     """
     try:
-        conn = sqlite3.connect(db_file)
+        # Even though the ingestion pipeline uses sequential inserts, if check_same_thread was always set to false,
+        # there is a risk of the application changing states while the pipeline processes the data on the same connection.
+        # Adding the extra argument distinguishes the purpose of the connection thread. Defaults to True for safer injection
+        # but will be set to False when being used for the streamlit application
+        conn = sqlite3.connect(db_file, check_same_thread=check_same_thread) 
         return conn
     except sqlite3.Error as e:
         raise RuntimeError(f"Error connecting to database: {e}")
