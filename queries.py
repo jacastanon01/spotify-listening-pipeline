@@ -5,9 +5,9 @@ SELECT
     ROUND(SUM(s.ms_played) / 60000.0, 1) as minutes_played
 FROM streams s 
 JOIN tracks t ON s.track_uri = t.uri
-WHERE strftime('%Y', s.ts) BETWEEN ? AND ?
+WHERE CAST(strftime('%Y', s.ts) AS INTEGER) BETWEEN ? AND ?
 GROUP BY year
-ORDER BY plays DESC;
+ORDER BY year ASC;
 """
 
 GET_YEARLY_TOP_ARTISTS = """
@@ -16,7 +16,7 @@ SELECT t.artist,
     ROUND(SUM(s.ms_played) / 60000.0, 1) as minutes_played
 FROM streams s 
 JOIN tracks t ON s.track_uri = t.uri
-WHERE strftime('%Y', s.ts) BETWEEN ? AND ?
+WHERE CAST(strftime('%Y', s.ts) AS INTEGER) BETWEEN ? AND ?
 GROUP BY t.artist
 ORDER BY minutes_played DESC
 LIMIT 15;
@@ -28,7 +28,7 @@ SELECT t.artist, t.name,
     ROUND(SUM(s.ms_played) / 60000.0, 1) as minutes_played
 FROM streams s 
 JOIN tracks t ON s.track_uri = t.uri
-WHERE strftime('%Y', s.ts) BETWEEN ? AND ?
+WHERE CAST(strftime('%Y', s.ts) AS INTEGER) BETWEEN ? AND ?
 GROUP BY t.name
 ORDER BY minutes_played DESC
 LIMIT 15;
