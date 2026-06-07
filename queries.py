@@ -33,3 +33,12 @@ GROUP BY t.uri
 ORDER BY minutes_played DESC
 LIMIT 15;
 """
+
+GET_TIME_OF_DAY_LISTENS = """
+SELECT 
+    strftime('%H', s.ts) as hour, 
+    ROUND(SUM(s.ms_played) / 60000.0, 1) as minutes_played
+FROM streams s
+GROUP BY hour 
+ORDER BY hour ASC;
+"""

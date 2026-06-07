@@ -2,9 +2,10 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
 
 from db import create_connection
-from queries import GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
+from queries import GET_TIME_OF_DAY_LISTENS, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
 
 # ============================================================
 # SETUP
@@ -13,6 +14,11 @@ from queries import GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY
 def get_connection() -> sqlite3.Connection | None:
     conn = create_connection("listening_history.db", check_same_thread=False)
     return conn
+
+def format_hour(hour: int) -> str:
+    period = "AM" if hour < 12 else "PM"
+    display = hour % 12 or 12
+    return f"{display}{period}"
 
 st.title("Listening History Project")
 conn = get_connection()
@@ -32,6 +38,12 @@ def get_top_artists_by_year(_conn: sqlite3.Connection | None, start_year: int = 
 @st.cache_data
 def get_top_tracks_by_year(_conn: sqlite3.Connection | None, start_year: int = 2013, end_year: int = 2026) -> pd.DataFrame:
     return pd.read_sql_query(GET_YEARLY_TOP_TRACKS, _conn, params=[start_year, end_year])
+
+@st.cache_data
+def get_time_of_day_analysis(_conn: sqlite3.Connection | None) -> pd.DataFrame:
+    return pd.read_sql_query(GET_TIME_OF_DAY_LISTENS, _conn)
+
+
 
 # ============================================================
 # APP LAYOUT
@@ -59,3 +71,13 @@ with overview:
 
         tracks_fig = px.bar(tracks_df, x="minutes_played", y="label", orientation="h")
         st.plotly_chart(tracks_fig)
+
+with habits:
+    st.header("How I listen")
+
+    time = get_time_of_day_analysis(conn)
+    hour_series = time["hour"].apply(lambda x: format_hour(int(x)))
+    time["hour"] = hour_series
+    hourly_fig = px.bar(time, x="hour", y="minutes_played")
+    st.plotly_chart(hourly_fig)
+
