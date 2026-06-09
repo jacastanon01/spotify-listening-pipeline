@@ -75,14 +75,18 @@ with overview:
 with habits:
     st.header("How I listen")
 
-    time_df = get_time_of_day_analysis(conn)
-    pdtz = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601')
-    tz = pdtz.dt.tz_convert("US/Central")
-    time_df["ts"] = tz
-    time_df["hour"] = time_df["ts"].dt.hour
+    time_df = get_time_of_day_analysis(conn) # get raw data from sqlite
 
-    hour_series = time_df["hour"].apply(lambda x: format_hour(int(x)))
-    time_df["hour"] = hour_series
-    hourly_fig = px.bar(time_df, x="hour", y="ms_played")
+    time_df["ts"] = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601').dt.tz_convert("US/Central") # convert ts to central standard for accurate results
+    time_df["hour"] = time_df["ts"].dt.hour # add hour column
+
+    time_df = time_df.groupby("hour")["ms_played"].sum() # Collapses all rows into 24 rows, one per hour, and sums ms_played
+    time_df = time_df.reset_index() # converts grouped series (hour: ms_played) back to two column data frame with named columns
+
+    time_df["ms_played"] = time_df["ms_played"] / 60000 # calcualtes minutes from milliseconds
+    time_df = time_df.sort_values("hour") 
+    time_df["hour"] = time_df["hour"].apply(lambda x: format_hour(int(x))) # formats 24 hour format on each row to 1-12 AM/PM
+
+    hourly_fig = px.bar(time_df, x="hour", y="ms_played") # Sets up chart to refelect time played during each hour
     st.plotly_chart(hourly_fig)
 
