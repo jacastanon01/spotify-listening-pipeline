@@ -5,7 +5,7 @@ import plotly.express as px
 from datetime import datetime
 
 from db import create_connection
-from queries import GET_TIME_OF_DAY_LISTENS, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
+from queries import GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
 
 # ============================================================
 # SETUP
@@ -41,7 +41,7 @@ def get_top_tracks_by_year(_conn: sqlite3.Connection | None, start_year: int = 2
 
 @st.cache_data
 def get_time_of_day_analysis(_conn: sqlite3.Connection | None) -> pd.DataFrame:
-    return pd.read_sql_query(GET_TIME_OF_DAY_LISTENS, _conn)
+    return pd.read_sql_query(GET_RAW_STREAMS_TIME, _conn)
 
 
 
@@ -75,9 +75,14 @@ with overview:
 with habits:
     st.header("How I listen")
 
-    time = get_time_of_day_analysis(conn)
-    hour_series = time["hour"].apply(lambda x: format_hour(int(x)))
-    time["hour"] = hour_series
-    hourly_fig = px.bar(time, x="hour", y="minutes_played")
+    time_df = get_time_of_day_analysis(conn)
+    pdtz = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601')
+    tz = pdtz.dt.tz_convert("US/Central")
+    time_df["ts"] = tz
+    time_df["hour"] = time_df["ts"].dt.hour
+
+    hour_series = time_df["hour"].apply(lambda x: format_hour(int(x)))
+    time_df["hour"] = hour_series
+    hourly_fig = px.bar(time_df, x="hour", y="ms_played")
     st.plotly_chart(hourly_fig)
 
