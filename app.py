@@ -83,10 +83,10 @@ with habits:
     time_df = time_df.groupby("hour")["ms_played"].sum() # Collapses all rows into 24 rows, one per hour, and sums ms_played
     time_df = time_df.reset_index() # converts grouped series (hour: ms_played) back to two column data frame with named columns
 
-    time_df["ms_played"] = time_df["ms_played"] / 60000 # calcualtes minutes from milliseconds
+    time_df["minutes"] = time_df["ms_played"] / 60000 # calcualtes minutes from milliseconds
     time_df = time_df.sort_values("hour") 
     time_df["hour"] = time_df["hour"].apply(lambda x: format_hour(int(x))) # formats 24 hour format on each row to 1-12 AM/PM
 
-    hourly_fig = px.bar(time_df, x="hour", y="ms_played") # Sets up chart to refelect time played during each hour
+    hourly_fig = px.bar(time_df, x="hour", y="minutes") # Sets up chart to refelect time played during each hour
     st.plotly_chart(hourly_fig)
 
