@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import plotly.express as px
+import time
 
 from db import create_connection
 from queries import GET_RAW_STREAMS_REASONS, GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
@@ -31,11 +32,6 @@ end_reasons_dict = {
     "endplay": "Stopped"
 }
 
-def classify_start_reason(row: pd.Series) -> str:
-    if row["reason_start"] in ["fwdbtn", "backbtn"] and row["reason_end"] == "trackdone":  # if user clicked to repeat song and listen in entirety
-        return deliberate
-    return start_reasons_dict.get(row["reason_start"], other)
-
 st.title("Listening History Project")
 conn = get_connection()
 
@@ -56,26 +52,40 @@ def get_top_tracks_by_year(_conn: sqlite3.Connection | None, start_year: int = 2
     return pd.read_sql_query(GET_YEARLY_TOP_TRACKS, _conn, params=[start_year, end_year])
 
 @st.cache_data
-def get_time_of_day_analysis(_conn: sqlite3.Connection | None) -> pd.DataFrame:
-    return pd.read_sql_query(GET_RAW_STREAMS_TIME, _conn)
-
-@st.cache_data
 def get_stream_reasons(_conn: sqlite3.Connection | None) -> pd.DataFrame:
     return pd.read_sql_query(GET_RAW_STREAMS_REASONS, _conn)
 
 @st.cache_data
 def load_streams_with_time(_conn: sqlite3.Connection | None) -> pd.DataFrame:
-    time_df = get_time_of_day_analysis(_conn)
+    time_df = pd.read_sql_query(GET_RAW_STREAMS_TIME, _conn)
     time_df["ts"] = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601').dt.tz_convert("US/Central") # convert ts to central standard for accurate results
     time_df["year"] = time_df["ts"].dt.year # add year column
     time_df["month"] = time_df["ts"].dt.month # add month column
     time_df["hour"] = time_df["ts"].dt.hour # add hour column
     return time_df
 
-times = load_streams_with_time(conn)
-print(times[0:5].info(verbose=True))
+@st.cache_data
+def prepare_reasons(reasons_df: pd.DataFrame) -> tuple:
+    start_reasons_df, end_reasons_df = reasons_df.copy(), reasons_df.copy() # copy() avoids reference in memory and allocates new space for both variables to operate on independently
+    start_reasons_df["category"] = start_reasons_df["reason_start"].map(start_reasons_dict).fillna(other) # labels every row as "Deliberate", "Passive" or "Other" based on the reason_start column
+    
+    deliberate_filter = (start_reasons_df["reason_start"].isin( # isin() is a pandas method similar to the in keyword in Python
+        ["fwdbtn", "backbtn"]) # instead of using x in [list], isin() contains similar logic, but allows filtering within Series
+        ) & (start_reasons_df["reason_end"] == "trackdone") # Label "Deliberate" if user clicked to repeat song and listen in entirety
+    
+    start_reasons_df.loc[deliberate_filter, "category"] = deliberate # apply filter to category column and label "Deliberate"
+    start_reasons_df = start_reasons_df.groupby("category").size().reset_index(name="count") # size() counts rows per category group, reset_index promotes result back to DataFrame
+    
+    end_reasons_df["category"] = end_reasons_df["reason_end"].map(end_reasons_dict).fillna(other) # Create cateogry column, used dictionary to populate values of column
+    end_reasons_df = end_reasons_df.groupby("category").size().reset_index(name="count")
 
+    return start_reasons_df, end_reasons_df
 
+start_data = time.perf_counter()
+streams_df = load_streams_with_time(conn)
+start_reasons_df, end_reasons_df = prepare_reasons(get_stream_reasons(conn))
+end_data = time.perf_counter()
+print(f"Data Loading & Parsing took: {end_data - start_data:.4f} seconds")
 
 # ============================================================
 # APP LAYOUT
@@ -110,18 +120,18 @@ with habits:
     # TIME OF DAY BAR CHART
     st.subheader("When I listen most")
 
-    time_df = get_time_of_day_analysis(conn) # get raw data from sqlite
-    time_df["ts"] = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601').dt.tz_convert("US/Central") # convert ts to central standard for accurate results
-    time_df["hour"] = time_df["ts"].dt.hour # add hour column
-
-
-    time_df = time_df.groupby("hour")["ms_played"].sum() # Collapses all rows into 24 rows, one per hour, and sums ms_played
-    time_df = time_df.reset_index() # converts grouped series (hour: ms_played) back to two column DataFrame with named columns
+    start_agg = time.perf_counter()
+    # reset_index() converts grouped series (hour: ms_played) back to two column DataFrame with named columns
+    time_df = streams_df.groupby("hour")["ms_played"].sum().reset_index() # Collapses all rows into 24 rows, one per hour, and sums ms_played
 
     time_df["minutes"] = time_df["ms_played"] / 60000 # calcualtes minutes from milliseconds
     time_df = time_df.sort_values("hour") 
     time_df["hour"] = time_df["hour"].apply(lambda x: format_hour(int(x))) # formats 24 hour format on each row to 1-12 AM/PM
 
+    end_agg = time.perf_counter()
+    print(f"Pandas Groupby and Math took: {end_agg - start_agg:.4f} seconds")
+
+    start_charts = time.perf_counter()
     hourly_fig = px.bar(time_df, x="hour", y="minutes") # Sets up chart to refelect time played during each hour
     st.plotly_chart(hourly_fig)
 
@@ -129,10 +139,6 @@ with habits:
 
     st.subheader("How I start listening")
     st.caption("What triggers a new track to play")
-
-    start_reasons_df = get_stream_reasons(conn) # extract reason_start and reason_end from streams table
-    start_reasons_df["category"] = start_reasons_df.apply(lambda x: classify_start_reason(x), axis=1) # axis = 1 applies classifiy_start_reason function row by row to access multiple columns (row["reason_start"] and row["reason_end"]) per row
-    start_reasons_df = start_reasons_df.groupby("category").size().reset_index(name="count") # size() counts rows per category group, reset_index promotes result back to DataFrame
 
     reasons_fig = px.pie(
         start_reasons_df,
@@ -166,9 +172,9 @@ with habits:
     st.subheader("How I end tracks")
     st.caption("Whether or not I let songs finish, skip ahead, or stop listening entirely")
 
-    end_reasons_df = get_stream_reasons(conn)
-    end_reasons_df["category"] = end_reasons_df["reason_end"].map(end_reasons_dict).fillna("Other") # Create cateogry column, used dictionary to populate values of column
-    end_reasons_df = end_reasons_df.groupby("category").size().reset_index(name="count")
+    # end_reasons_df = raw_reasons_df
+    # end_reasons_df["category"] = end_reasons_df["reason_end"].map(end_reasons_dict).fillna("Other") # Create cateogry column, used dictionary to populate values of column
+    # end_reasons_df = end_reasons_df.groupby("category").size().reset_index(name="count")
 
     end_reasons_fig = px.pie(
         end_reasons_df,
@@ -203,6 +209,9 @@ with habits:
     with col4:
         st.markdown('<span style="color:#78909C; font-weight:bold; font-size:1.1em">● Other</span>', unsafe_allow_html=True)
         st.caption("Back navigation, unexpected exits, and unclassified events.")
+
+        end_charts = time.perf_counter()
+        print(f"Plotly rendering took: {end_charts - start_charts:.4f} seconds")
 
 with phases:
     st.header("What was I listening to when")
