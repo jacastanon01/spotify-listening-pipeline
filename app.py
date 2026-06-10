@@ -5,7 +5,7 @@ import plotly.express as px
 from datetime import datetime
 
 from db import create_connection
-from queries import GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
+from queries import GET_RAW_STREAMS_REASONS, GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
 
 # ============================================================
 # SETUP
@@ -19,6 +19,18 @@ def format_hour(hour: int) -> str:
     period = "AM" if hour < 12 else "PM"
     display = hour % 12 or 12
     return f"{display}{period}"
+
+deliberate, passive, other = ["Deliberate", "Passive", "Other"]
+reasons_dict = {
+    "clickrow": deliberate,
+    "playbtn": deliberate,
+    "trackdone": passive,
+}
+
+def classify_start_reason(row: pd.Series) -> str:
+    if row["reason_start"] in ["fwdbtn", "backbtn"] and row["reason_end"] == "trackdone":
+        return deliberate
+    return reasons_dict.get(row["reason_start"], other)
 
 st.title("Listening History Project")
 conn = get_connection()
@@ -42,6 +54,10 @@ def get_top_tracks_by_year(_conn: sqlite3.Connection | None, start_year: int = 2
 @st.cache_data
 def get_time_of_day_analysis(_conn: sqlite3.Connection | None) -> pd.DataFrame:
     return pd.read_sql_query(GET_RAW_STREAMS_TIME, _conn)
+
+@st.cache_data
+def get_stream_reasons(_conn: sqlite3.Connection | None) -> pd.DataFrame:
+    return pd.read_sql_query(GET_RAW_STREAMS_REASONS, _conn)
 
 
 
@@ -75,6 +91,9 @@ with overview:
 with habits:
     st.header("How I listen")
 
+    # TIME OF DAY BAR CHART
+    st.subheader("When I listen most")
+
     time_df = get_time_of_day_analysis(conn) # get raw data from sqlite
 
     time_df["ts"] = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601').dt.tz_convert("US/Central") # convert ts to central standard for accurate results
@@ -89,4 +108,39 @@ with habits:
 
     hourly_fig = px.bar(time_df, x="hour", y="minutes") # Sets up chart to refelect time played during each hour
     st.plotly_chart(hourly_fig)
+
+    # REASON_START DONUT CHART
+
+    st.subheader("How I start listening")
+    st.caption("What triggers a new track to play")
+
+    reasons_df = get_stream_reasons(conn)
+    reasons_df["category"] = reasons_df.apply(lambda x: classify_start_reason(x), axis=1)
+    reasons_df = reasons_df.groupby("category").size().reset_index(name="count")
+
+    reasons_fig = px.pie(reasons_df, values="count", names="category", hole=0.4)
+    st.plotly_chart(reasons_fig)
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown('<span style="color:#636EFA; font-weight:bold; font-size:1.1em">● Deliberate</span>', unsafe_allow_html=True)
+        st.caption("Tracks you actively chose: clicked, pressed play, or skipped to and finished.")
+
+    with col2:
+        st.markdown('<span style="color:#EF553B; font-weight:bold; font-size:1.1em">● Other</span>', unsafe_allow_html=True)
+        st.caption("Skips you abandoned before finishing, app loads, remote sessions, and unclassified events.")
+
+    with col3:
+        st.markdown('<span style="color:#00CC96; font-weight:bold; font-size:1.1em">● Passive</span>', unsafe_allow_html=True)
+        st.caption("Tracks Spotify advanced to automatically after the previous one ended.")
+    
+    # REASONS END DONUT CHART
+
+    st.subheader("How I end tracks")
+    st.caption("Whether or notI let songs finish, skip ahead, or stop listening entirely")
+
+
+
+
+
 
