@@ -21,16 +21,21 @@ def format_hour(hour: int) -> str:
     return f"{display}{period}"
 
 deliberate, passive, other = ["Deliberate", "Passive", "Other"]
-reasons_dict = {
+start_reasons_dict = {
     "clickrow": deliberate,
     "playbtn": deliberate,
     "trackdone": passive,
+}
+end_reasons_dict = {
+    "trackdone": "Finished",
+    "fwdbtn": "Skipped",
+    "endplay": "Stopped"
 }
 
 def classify_start_reason(row: pd.Series) -> str:
     if row["reason_start"] in ["fwdbtn", "backbtn"] and row["reason_end"] == "trackdone":
         return deliberate
-    return reasons_dict.get(row["reason_start"], other)
+    return start_reasons_dict.get(row["reason_start"], other)
 
 st.title("Listening History Project")
 conn = get_connection()
@@ -109,7 +114,7 @@ with habits:
     hourly_fig = px.bar(time_df, x="hour", y="minutes") # Sets up chart to refelect time played during each hour
     st.plotly_chart(hourly_fig)
 
-    # REASON_START DONUT CHART
+    # REASON_START DONUT PIE CHART
 
     st.subheader("How I start listening")
     st.caption("What triggers a new track to play")
@@ -118,26 +123,75 @@ with habits:
     reasons_df["category"] = reasons_df.apply(lambda x: classify_start_reason(x), axis=1)
     reasons_df = reasons_df.groupby("category").size().reset_index(name="count")
 
-    reasons_fig = px.pie(reasons_df, values="count", names="category", hole=0.4)
+    reasons_fig = px.pie(
+        reasons_df,
+        values="count",
+        names="category",
+        hole=0.4,
+        color_discrete_map={
+            "Deliberate": "#2196F3",
+            "Passive": "#81D6EB",
+            "Other": "#78909C"
+        }
+    )
+    reasons_fig.update_traces(marker=dict(colors=["#2196F3", "#78909C", "#81D6EB"]))
     st.plotly_chart(reasons_fig)
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown('<span style="color:#636EFA; font-weight:bold; font-size:1.1em">● Deliberate</span>', unsafe_allow_html=True)
+        st.markdown('<span style="color:#2196F3; font-weight:bold; font-size:1.1em">● Deliberate</span>', unsafe_allow_html=True)
         st.caption("Tracks you actively chose: clicked, pressed play, or skipped to and finished.")
 
     with col2:
-        st.markdown('<span style="color:#EF553B; font-weight:bold; font-size:1.1em">● Other</span>', unsafe_allow_html=True)
-        st.caption("Skips you abandoned before finishing, app loads, remote sessions, and unclassified events.")
+        st.markdown('<span style="color:#B0BEC5; font-weight:bold; font-size:1.1em">● Passive</span>', unsafe_allow_html=True)
+        st.caption("Tracks Spotify advanced to automatically after the previous one ended.")
 
     with col3:
-        st.markdown('<span style="color:#00CC96; font-weight:bold; font-size:1.1em">● Passive</span>', unsafe_allow_html=True)
-        st.caption("Tracks Spotify advanced to automatically after the previous one ended.")
+        st.markdown('<span style="color:#78909C; font-weight:bold; font-size:1.1em">● Other</span>', unsafe_allow_html=True)
+        st.caption("Skips you abandoned before finishing, app loads, remote sessions, and unclassified events.")
     
-    # REASONS END DONUT CHART
+    # REASONS END DONUT PIE CHART
 
     st.subheader("How I end tracks")
-    st.caption("Whether or notI let songs finish, skip ahead, or stop listening entirely")
+    st.caption("Whether or not I let songs finish, skip ahead, or stop listening entirely")
+
+    end_reasons_df = get_stream_reasons(conn)
+    end_reasons_df["category"] = end_reasons_df["reason_end"].map(end_reasons_dict).fillna("Other")
+    end_reasons_df = end_reasons_df.groupby("category").size().reset_index(name="count")
+
+    end_reasons_fig = px.pie(
+        end_reasons_df,
+        values="count",
+        names="category",
+        hole=0.4,
+        color_discrete_map={
+            "Finished": "#4CAF50",
+            "Skipped": "#FF9800",
+            "Stopped": "#F44336",
+            "Other": "#78909C"
+        }
+    )
+    end_reasons_fig.update_traces(marker=dict(colors=["#4CAF50", "#78909C", "#FF9800", "#F44336"]))
+    st.plotly_chart(end_reasons_fig)
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.markdown('<span style="color:#4CAF50; font-weight:bold; font-size:1.1em">● Finished</span>', unsafe_allow_html=True)
+        st.caption("Track played to completion.")
+
+    with col2:
+        st.markdown('<span style="color:#FF9800; font-weight:bold; font-size:1.1em">● Skipped</span>', unsafe_allow_html=True)
+        st.caption("Jumped forward before the track ended.")
+
+    with col3:
+        st.markdown('<span style="color:#F44336; font-weight:bold; font-size:1.1em">● Stopped</span>', unsafe_allow_html=True)
+        st.caption("Playback ended before the track finished.")
+
+    with col4:
+        st.markdown('<span style="color:#78909C; font-weight:bold; font-size:1.1em">● Other</span>', unsafe_allow_html=True)
+        st.caption("Back navigation, unexpected exits, and unclassified events.")
 
 
 
