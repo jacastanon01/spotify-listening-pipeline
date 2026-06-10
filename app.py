@@ -1,4 +1,3 @@
-from typing import Any
 
 import streamlit as st
 import sqlite3
@@ -32,6 +31,83 @@ end_reasons_dict = {
 
 def calculate_minutes(row: pd.Series) -> int:
     return row["ms_played"] / 60000
+
+def get_month_detail(streams_df: pd.DataFrame, tracks_df: pd.DataFrame, year: int, month: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    mask = (streams_df["year"] == year) & (streams_df["month_name"] == month)
+    filtered = pd.merge(streams_df[mask], tracks_df, left_on="track_uri", right_on="uri")
+
+    top_artists = (
+        filtered.groupby("artist")["ms_played"]
+        .sum()
+        .reset_index()
+        .sort_values("ms_played", ascending=False)
+        .head(10)
+    )
+    top_artists["minutes"] = (top_artists["ms_played"] / 60000).round(1)
+
+    top_tracks = (
+        filtered.groupby(["name", "artist"])["ms_played"]
+        .sum()
+        .reset_index()
+        .sort_values("ms_played", ascending=False)
+        .head(10)
+    )
+    top_tracks["minutes"] = (top_tracks["ms_played"] / 60000).round(1)
+
+    return top_artists, top_tracks
+
+def render_month_detail_html(top_artists: pd.DataFrame, top_tracks: pd.DataFrame, month: str, year: int) -> str:
+    def build_items(df: pd.DataFrame, name_col: str, subtitle_col: str | None = None) -> str:
+        max_min = df["minutes"].max()
+        rows = ""
+        for i, row in enumerate(df.itertuples(), 1):
+            name = getattr(row, name_col)
+            minutes = row.minutes
+            bar_width = int((minutes / max_min) * 100) if max_min > 0 else 0
+            subtitle_html = ""
+            if subtitle_col:
+                subtitle = getattr(row, subtitle_col)
+                subtitle_html = f'<div class="subtitle">{subtitle}</div>'
+            rows += f"""
+            <div class="item">
+                <span class="rank">{i:02d}</span>
+                <div class="info">
+                    <div class="name" title="{name}">{name}</div>
+                    {subtitle_html}
+                    <div class="bar" style="width:{bar_width}%"></div>
+                    <div class="minutes">{minutes:.0f} min</div>
+                </div>
+            </div>"""
+        return rows
+
+    return f"""
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ background: transparent; font-family: 'Inter', system-ui, sans-serif; }}
+        .container {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 4px; }}
+        .column {{ background: #1A1A24; border-radius: 12px; overflow: hidden; }}
+        .column-header {{ padding: 14px 20px; border-bottom: 1px solid #2D2D3D; }}
+        .column-title {{ font-size: 0.65rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #7C3AED; }}
+        .item {{ display: flex; align-items: center; padding: 10px 20px; border-bottom: 1px solid #1F1F2E; gap: 14px; }}
+        .item:last-child {{ border-bottom: none; }}
+        .rank {{ font-size: 1.3rem; font-weight: 800; color: #2A2A3D; min-width: 28px; font-variant-numeric: tabular-nums; }}
+        .info {{ flex: 1; min-width: 0; }}
+        .name {{ font-size: 0.85rem; font-weight: 500; color: #E2E8F0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .subtitle {{ font-size: 0.72rem; color: #64748B; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .bar {{ height: 2px; background: #7C3AED; border-radius: 1px; margin-top: 5px; margin-bottom: 3px; }}
+        .minutes {{ font-size: 0.7rem; color: #4A5568; letter-spacing: 0.04em; }}
+    </style>
+    <div class="container">
+        <div class="column">
+            <div class="column-header"><div class="column-title">Top Artists · {month} {year}</div></div>
+            {build_items(top_artists, "artist")}
+        </div>
+        <div class="column">
+            <div class="column-header"><div class="column-title">Top Tracks · {month} {year}</div></div>
+            {build_items(top_tracks, "name", subtitle_col="artist")}
+        </div>
+    </div>"""
+
 
 @st.cache_data
 def get_monthly_played_stats(df: pd.DataFrame, year: int) -> pd.DataFrame:
@@ -253,8 +329,10 @@ with phases:
     points = event.get("selection", {}).get("points", [])
 
     if points:
-        selected_month = event["selection"]["points"][0].get("x")
-        st.session_state["selected_month"] = selected_month
+        st.session_state["selected_month"] = event["selection"]["points"][0].get("x")
+
+    if st.session_state.get("selected_month"):
+        selected_month = st.session_state["selected_month"]
 
         filter_by_month_year = (
             streams_df["year"] == selected_year
@@ -283,8 +361,16 @@ with phases:
         )
         filtered_tracks["minutes"] = filtered_tracks["ms_played"] / 60000
 
-    st.write(tracks_df.columns)
-    st.write(st.session_state["selected_year"])
+        if st.session_state.get("selected_month"):
+            top_artists, top_tracks = get_month_detail(
+                streams_df, tracks_df,
+                st.session_state["selected_year"],
+                st.session_state["selected_month"]
+            )
+            st.iframe(
+                render_month_detail_html(top_artists, top_tracks, st.session_state["selected_month"], st.session_state["selected_year"]),
+                height=580
+            )
 
 
 
