@@ -4,7 +4,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import plotly.express as px
-import time
 
 from db import create_connection
 from queries import GET_RAW_STREAMS_REASONS, GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
@@ -34,6 +33,7 @@ end_reasons_dict = {
 def calculate_minutes(row: pd.Series) -> int:
     return row["ms_played"] / 60000
 
+@st.cache_data
 def get_monthly_played_stats(df: pd.DataFrame, year: int) -> pd.DataFrame:
     # Monthly aggrgation for bar chart
     monthly_df = (
@@ -92,7 +92,9 @@ def load_tracks(_conn: sqlite3.Connection | None) -> pd.DataFrame:
     return pd.read_sql_query("SELECT uri, name, artist FROM tracks", _conn)
 
 @st.cache_data
-def prepare_reasons(reasons_df: pd.DataFrame) -> tuple:
+def load_reasons(_conn: sqlite3.Connection | None) -> tuple:
+    reasons_df = get_stream_reasons(_conn)
+
     start_reasons_df, end_reasons_df = reasons_df.copy(), reasons_df.copy() # copy() avoids reference in memory and allocates new space for both variables to operate on independently
     start_reasons_df["category"] = start_reasons_df["reason_start"].map(start_reasons_dict).fillna(other) # labels every row as "Deliberate", "Passive" or "Other" based on the reason_start column
     
@@ -108,12 +110,10 @@ def prepare_reasons(reasons_df: pd.DataFrame) -> tuple:
 
     return start_reasons_df, end_reasons_df
 
-start_data = time.perf_counter()
+
 streams_df = load_streams_with_time(conn)
 tracks_df = load_tracks(conn)
-start_reasons_df, end_reasons_df = prepare_reasons(get_stream_reasons(conn))
-end_data = time.perf_counter()
-print(f"Data Loading & Parsing took: {end_data - start_data:.4f} seconds")
+start_reasons_df, end_reasons_df = load_reasons(conn)
 
 # ============================================================
 # APP LAYOUT
@@ -121,7 +121,6 @@ print(f"Data Loading & Parsing took: {end_data - start_data:.4f} seconds")
 
 overview, habits, phases = st.tabs(["Overview", "Habits", "Phases"])
 
-start_charts = time.perf_counter()
 # OVERVIEW
 with overview:
     st.header("Listening volume through the years")
@@ -129,8 +128,8 @@ with overview:
 
     time_df = get_minutes_by_year(conn, start_year, end_year)
     artist_df = get_top_artists_by_year(conn, start_year, end_year)
-    tracks_df = get_top_tracks_by_year(conn, start_year, end_year)
-    tracks_df["label"] = tracks_df["name"] + " - " + tracks_df["artist"]
+    tracks_df_year = get_top_tracks_by_year(conn, start_year, end_year)
+    tracks_df_year["label"] = tracks_df_year["name"] + " - " + tracks_df_year["artist"]
 
     if time_df.empty:
         st.warning(f"No listening history found between {start_year} and {end_year}")
@@ -140,7 +139,7 @@ with overview:
         artists_fig = px.bar(artist_df, x="minutes_played", y="artist", orientation="h")
         st.plotly_chart(artists_fig)
 
-        tracks_fig = px.bar(tracks_df, x="minutes_played", y="label", orientation="h")
+        tracks_fig = px.bar(tracks_df_year, x="minutes_played", y="label", orientation="h")
         st.plotly_chart(tracks_fig)
 
 with habits:
@@ -149,16 +148,12 @@ with habits:
     # TIME OF DAY BAR CHART
     st.subheader("When I listen most")
 
-    start_agg = time.perf_counter()
     # reset_index() converts grouped series (hour: ms_played) back to two column DataFrame with named columns
     time_df = streams_df.groupby("hour")["ms_played"].sum().reset_index() # Collapses all rows into 24 rows, one per hour, and sums ms_played
 
     time_df["minutes"] = time_df["ms_played"] / 60000 # calcualtes minutes from milliseconds
     time_df = time_df.sort_values("hour") 
     time_df["hour"] = time_df["hour"].apply(lambda x: format_hour(int(x))) # formats 24 hour format on each row to 1-12 AM/PM
-
-    end_agg = time.perf_counter()
-    print(f"Pandas Groupby and Math took: {end_agg - start_agg:.4f} seconds")
 
     hourly_fig = px.bar(time_df, x="hour", y="minutes") # Sets up chart to refelect time played during each hour
     st.plotly_chart(hourly_fig)
@@ -216,8 +211,6 @@ with habits:
     st.plotly_chart(end_reasons_fig)
     col1, col2, col3, col4 = st.columns(4)
 
-    col1, col2, col3, col4 = st.columns(4)
-
     with col1:
         st.markdown('<span style="color:#4CAF50; font-weight:bold; font-size:1.1em">● Finished</span>', unsafe_allow_html=True)
         st.caption("Track played to completion.")
@@ -258,14 +251,41 @@ with phases:
     yearly_fig = px.bar(monthly_df, x="month_name", y="minutes_played")
     event = st.plotly_chart(yearly_fig, on_select="rerun")
     points = event.get("selection", {}).get("points", [])
+
     if points:
         selected_month = event["selection"]["points"][0].get("x")
         st.session_state["selected_month"] = selected_month
-    st.write(st.session_state["selected_month"])
+
+        filter_by_month_year = (
+            streams_df["year"] == selected_year
+            ) & (
+                streams_df["month_name"] == selected_month
+            )
+        
+        filtered_streams = pd.merge(left=streams_df[filter_by_month_year], right=tracks_df, left_on="track_uri", right_on="uri")
+        filtered_artists = (
+            filtered_streams
+            .groupby("artist")["ms_played"]
+            .sum()
+            .reset_index()
+            .sort_values("ms_played", ascending=False)
+            .head(10)
+        )
+        filtered_artists["minutes"] = filtered_artists["ms_played"] / 60000
+
+        filtered_tracks = (
+            filtered_streams
+            .groupby("name")["ms_played"]
+            .sum()
+            .reset_index()
+            .sort_values("ms_played", ascending=False)
+            .head(10)
+        )
+        filtered_tracks["minutes"] = filtered_tracks["ms_played"] / 60000
+
+    st.write(tracks_df.columns)
     st.write(st.session_state["selected_year"])
 
-end_charts = time.perf_counter()
-print(f"Plotly rendering took: {end_charts - start_charts:.4f} seconds")
 
 
 
