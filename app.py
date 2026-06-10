@@ -1,3 +1,5 @@
+from typing import Any
+
 import streamlit as st
 import sqlite3
 import pandas as pd
@@ -8,12 +10,8 @@ from db import create_connection
 from queries import GET_RAW_STREAMS_REASONS, GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
 
 # ============================================================
-# SETUP
+# UTILITIES
 # ============================================================
-@st.cache_resource
-def get_connection() -> sqlite3.Connection | None:
-    conn = create_connection("listening_history.db", check_same_thread=False)
-    return conn
 
 def format_hour(hour: int) -> str:
     period = "AM" if hour < 12 else "PM"
@@ -26,12 +24,36 @@ start_reasons_dict = {
     "playbtn": deliberate,
     "trackdone": passive,
 }
+
 end_reasons_dict = {
     "trackdone": "Finished",
     "fwdbtn": "Skipped",
     "endplay": "Stopped"
 }
 
+def calculate_minutes(row: pd.Series) -> int:
+    return row["ms_played"] / 60000
+
+def get_monthly_played_stats(df: pd.DataFrame, year: int) -> pd.DataFrame:
+    # Monthly aggrgation for bar chart
+    monthly_df = (
+        df[df["year"] == year] # filter to selected year
+        .groupby(["month", "month_name"])["ms_played"] # group by month index and name 
+        .sum() # sum ms_played for given months
+        .reset_index()
+    )
+    monthly_df["minutes_played"] = monthly_df["ms_played"] / 60000
+    return monthly_df
+
+# ============================================================
+# SETUP
+# ============================================================
+
+
+@st.cache_resource
+def get_connection() -> sqlite3.Connection | None:
+    conn = create_connection("listening_history.db", check_same_thread=False)
+    return conn
 st.title("Listening History Project")
 conn = get_connection()
 
@@ -60,9 +82,14 @@ def load_streams_with_time(_conn: sqlite3.Connection | None) -> pd.DataFrame:
     time_df = pd.read_sql_query(GET_RAW_STREAMS_TIME, _conn)
     time_df["ts"] = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601').dt.tz_convert("US/Central") # convert ts to central standard for accurate results
     time_df["year"] = time_df["ts"].dt.year # add year column
-    time_df["month"] = time_df["ts"].dt.month # add month column
+    time_df["month"] = time_df["ts"].dt.month # use for sorting
+    time_df["month_name"] = time_df["ts"].dt.month_name() # add month name
     time_df["hour"] = time_df["ts"].dt.hour # add hour column
     return time_df
+
+@st.cache_data
+def load_tracks(_conn: sqlite3.Connection | None) -> pd.DataFrame:
+    return pd.read_sql_query("SELECT uri, name, artist FROM tracks", _conn)
 
 @st.cache_data
 def prepare_reasons(reasons_df: pd.DataFrame) -> tuple:
@@ -83,6 +110,7 @@ def prepare_reasons(reasons_df: pd.DataFrame) -> tuple:
 
 start_data = time.perf_counter()
 streams_df = load_streams_with_time(conn)
+tracks_df = load_tracks(conn)
 start_reasons_df, end_reasons_df = prepare_reasons(get_stream_reasons(conn))
 end_data = time.perf_counter()
 print(f"Data Loading & Parsing took: {end_data - start_data:.4f} seconds")
@@ -93,6 +121,7 @@ print(f"Data Loading & Parsing took: {end_data - start_data:.4f} seconds")
 
 overview, habits, phases = st.tabs(["Overview", "Habits", "Phases"])
 
+start_charts = time.perf_counter()
 # OVERVIEW
 with overview:
     st.header("Listening volume through the years")
@@ -131,7 +160,6 @@ with habits:
     end_agg = time.perf_counter()
     print(f"Pandas Groupby and Math took: {end_agg - start_agg:.4f} seconds")
 
-    start_charts = time.perf_counter()
     hourly_fig = px.bar(time_df, x="hour", y="minutes") # Sets up chart to refelect time played during each hour
     st.plotly_chart(hourly_fig)
 
@@ -160,7 +188,7 @@ with habits:
         st.caption("Tracks you actively chose: clicked, pressed play, or skipped to and finished.")
 
     with col2:
-        st.markdown('<span style="color:#B0BEC5; font-weight:bold; font-size:1.1em">● Passive</span>', unsafe_allow_html=True)
+        st.markdown('<span style="color:#81D6EB; font-weight:bold; font-size:1.1em">● Passive</span>', unsafe_allow_html=True)
         st.caption("Tracks Spotify advanced to automatically after the previous one ended.")
 
     with col3:
@@ -171,10 +199,6 @@ with habits:
 
     st.subheader("How I end tracks")
     st.caption("Whether or not I let songs finish, skip ahead, or stop listening entirely")
-
-    # end_reasons_df = raw_reasons_df
-    # end_reasons_df["category"] = end_reasons_df["reason_end"].map(end_reasons_dict).fillna("Other") # Create cateogry column, used dictionary to populate values of column
-    # end_reasons_df = end_reasons_df.groupby("category").size().reset_index(name="count")
 
     end_reasons_fig = px.pie(
         end_reasons_df,
@@ -210,11 +234,41 @@ with habits:
         st.markdown('<span style="color:#78909C; font-weight:bold; font-size:1.1em">● Other</span>', unsafe_allow_html=True)
         st.caption("Back navigation, unexpected exits, and unclassified events.")
 
-        end_charts = time.perf_counter()
-        print(f"Plotly rendering took: {end_charts - start_charts:.4f} seconds")
 
 with phases:
     st.header("What was I listening to when")
+
+    # Set up year selector
+    available_years = sorted(streams_df["year"].unique(), reverse=True)
+    selected_year = st.selectbox("Select a year", available_years)
+
+    if selected_year is None:
+        st.stop()
+
+    if "selected_year" not in st.session_state:
+        st.session_state["selected_year"] = selected_year
+    if "selected_month" not in st.session_state:
+        st.session_state["selected_month"] = None
+
+    if st.session_state["selected_year"] != selected_year:
+        st.session_state["selected_year"] = selected_year
+        st.session_state["selected_month"] = None
+
+    monthly_df = get_monthly_played_stats(streams_df, selected_year)
+    yearly_fig = px.bar(monthly_df, x="month_name", y="minutes_played")
+    event = st.plotly_chart(yearly_fig, on_select="rerun")
+    points = event.get("selection", {}).get("points", [])
+    if points:
+        selected_month = event["selection"]["points"][0].get("x")
+        st.session_state["selected_month"] = selected_month
+    st.write(st.session_state["selected_month"])
+    st.write(st.session_state["selected_year"])
+
+end_charts = time.perf_counter()
+print(f"Plotly rendering took: {end_charts - start_charts:.4f} seconds")
+
+
+
 
 
 
