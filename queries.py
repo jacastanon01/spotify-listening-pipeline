@@ -35,7 +35,7 @@ LIMIT 15;
 """
 
 GET_RAW_STREAMS_TIME = """
-SELECT ts, ms_played 
+SELECT ts, ms_played, track_uri
 FROM streams;
 """
 

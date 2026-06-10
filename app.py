@@ -2,7 +2,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
 
 from db import create_connection
 from queries import GET_RAW_STREAMS_REASONS, GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
@@ -64,6 +63,18 @@ def get_time_of_day_analysis(_conn: sqlite3.Connection | None) -> pd.DataFrame:
 def get_stream_reasons(_conn: sqlite3.Connection | None) -> pd.DataFrame:
     return pd.read_sql_query(GET_RAW_STREAMS_REASONS, _conn)
 
+@st.cache_data
+def load_streams_with_time(_conn: sqlite3.Connection | None) -> pd.DataFrame:
+    time_df = get_time_of_day_analysis(_conn)
+    time_df["ts"] = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601').dt.tz_convert("US/Central") # convert ts to central standard for accurate results
+    time_df["year"] = time_df["ts"].dt.year # add year column
+    time_df["month"] = time_df["ts"].dt.month # add month column
+    time_df["hour"] = time_df["ts"].dt.hour # add hour column
+    return time_df
+
+times = load_streams_with_time(conn)
+print(times[0:5].info(verbose=True))
+
 
 
 # ============================================================
@@ -74,7 +85,7 @@ overview, habits, phases = st.tabs(["Overview", "Habits", "Phases"])
 
 # OVERVIEW
 with overview:
-    st.header("Music through the years")
+    st.header("Listening volume through the years")
     start_year, end_year = st.slider("Time Range(Year)", 2013, 2026, (2013, 2026))
 
     time_df = get_minutes_by_year(conn, start_year, end_year)
@@ -100,9 +111,9 @@ with habits:
     st.subheader("When I listen most")
 
     time_df = get_time_of_day_analysis(conn) # get raw data from sqlite
-
     time_df["ts"] = pd.to_datetime(time_df["ts"], utc=True, format='ISO8601').dt.tz_convert("US/Central") # convert ts to central standard for accurate results
     time_df["hour"] = time_df["ts"].dt.hour # add hour column
+
 
     time_df = time_df.groupby("hour")["ms_played"].sum() # Collapses all rows into 24 rows, one per hour, and sums ms_played
     time_df = time_df.reset_index() # converts grouped series (hour: ms_played) back to two column DataFrame with named columns
@@ -193,7 +204,8 @@ with habits:
         st.markdown('<span style="color:#78909C; font-weight:bold; font-size:1.1em">● Other</span>', unsafe_allow_html=True)
         st.caption("Back navigation, unexpected exits, and unclassified events.")
 
-
+with phases:
+    st.header("What was I listening to when")
 
 
 
