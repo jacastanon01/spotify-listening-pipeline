@@ -33,7 +33,7 @@ end_reasons_dict = {
 }
 
 def classify_start_reason(row: pd.Series) -> str:
-    if row["reason_start"] in ["fwdbtn", "backbtn"] and row["reason_end"] == "trackdone":
+    if row["reason_start"] in ["fwdbtn", "backbtn"] and row["reason_end"] == "trackdone":  # if user clicked to repeat song and listen in entirety
         return deliberate
     return start_reasons_dict.get(row["reason_start"], other)
 
@@ -105,7 +105,7 @@ with habits:
     time_df["hour"] = time_df["ts"].dt.hour # add hour column
 
     time_df = time_df.groupby("hour")["ms_played"].sum() # Collapses all rows into 24 rows, one per hour, and sums ms_played
-    time_df = time_df.reset_index() # converts grouped series (hour: ms_played) back to two column data frame with named columns
+    time_df = time_df.reset_index() # converts grouped series (hour: ms_played) back to two column DataFrame with named columns
 
     time_df["minutes"] = time_df["ms_played"] / 60000 # calcualtes minutes from milliseconds
     time_df = time_df.sort_values("hour") 
@@ -119,12 +119,12 @@ with habits:
     st.subheader("How I start listening")
     st.caption("What triggers a new track to play")
 
-    reasons_df = get_stream_reasons(conn)
-    reasons_df["category"] = reasons_df.apply(lambda x: classify_start_reason(x), axis=1)
-    reasons_df = reasons_df.groupby("category").size().reset_index(name="count")
+    start_reasons_df = get_stream_reasons(conn) # extract reason_start and reason_end from streams table
+    start_reasons_df["category"] = start_reasons_df.apply(lambda x: classify_start_reason(x), axis=1) # axis = 1 applies classifiy_start_reason function row by row to access multiple columns (row["reason_start"] and row["reason_end"]) per row
+    start_reasons_df = start_reasons_df.groupby("category").size().reset_index(name="count") # size() counts rows per category group, reset_index promotes result back to DataFrame
 
     reasons_fig = px.pie(
-        reasons_df,
+        start_reasons_df,
         values="count",
         names="category",
         hole=0.4,
@@ -134,7 +134,7 @@ with habits:
             "Other": "#78909C"
         }
     )
-    reasons_fig.update_traces(marker=dict(colors=["#2196F3", "#78909C", "#81D6EB"]))
+    reasons_fig.update_traces(marker=dict(colors=["#2196F3", "#78909C", "#81D6EB"])) # sets colors directly in order so no mismatched colors in chart or key ore markdown
     st.plotly_chart(reasons_fig)
     col1, col2, col3 = st.columns(3)
 
@@ -156,7 +156,7 @@ with habits:
     st.caption("Whether or not I let songs finish, skip ahead, or stop listening entirely")
 
     end_reasons_df = get_stream_reasons(conn)
-    end_reasons_df["category"] = end_reasons_df["reason_end"].map(end_reasons_dict).fillna("Other")
+    end_reasons_df["category"] = end_reasons_df["reason_end"].map(end_reasons_dict).fillna("Other") # Create cateogry column, used dictionary to populate values of column
     end_reasons_df = end_reasons_df.groupby("category").size().reset_index(name="count")
 
     end_reasons_fig = px.pie(
