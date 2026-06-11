@@ -2,21 +2,8 @@ import sqlite3
 import streamlit as st
 import pandas as pd
 
-from queries import GET_RAW_STREAMS_REASONS, GET_RAW_STREAMS_TIME, GET_YEARLY_PLAYS_MINUTES, GET_YEARLY_TOP_ARTISTS, GET_YEARLY_TOP_TRACKS
+from queries import GET_RAW_STREAMS_REASONS, GET_RAW_STREAMS_TIME
 from utils import DELIBERATE, END_REASONS_DICT, OTHER, START_REASONS_DICT
-
-
-@st.cache_data
-def get_minutes_by_year(_conn: sqlite3.Connection | None, start_year: int = 2013, end_year: int = 2026) -> pd.DataFrame:
-    return pd.read_sql_query(GET_YEARLY_PLAYS_MINUTES, _conn, params=[start_year, end_year])
-
-@st.cache_data
-def get_top_artists_by_year(_conn: sqlite3.Connection | None, start_year: int = 2013, end_year: int = 2026) -> pd.DataFrame:
-    return pd.read_sql_query(GET_YEARLY_TOP_ARTISTS, _conn, params=[start_year, end_year])
-
-@st.cache_data
-def get_top_tracks_by_year(_conn: sqlite3.Connection | None, start_year: int = 2013, end_year: int = 2026) -> pd.DataFrame:
-    return pd.read_sql_query(GET_YEARLY_TOP_TRACKS, _conn, params=[start_year, end_year])
 
 @st.cache_data
 def get_stream_reasons(_conn: sqlite3.Connection | None) -> pd.DataFrame:

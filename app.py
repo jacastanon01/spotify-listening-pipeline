@@ -4,14 +4,13 @@ import sqlite3
 import pandas as pd
 import plotly.express as px
 
-from data_funcs import get_minutes_by_year, get_monthly_played_stats, get_top_artists_by_year, get_top_tracks_by_year, load_reasons, load_streams_with_time, load_tracks
+from data_funcs import  get_monthly_played_stats, load_reasons, load_streams_with_time, load_tracks
 from db import create_connection
 from utils import format_hour, get_month_detail, render_month_detail_html
 
 # ============================================================
 # SETUP
 # ============================================================
-
 
 @st.cache_resource
 def get_connection() -> sqlite3.Connection | None:
@@ -35,14 +34,40 @@ with overview:
     st.header("Listening volume through the years")
     start_year, end_year = st.slider("Time Range(Year)", 2013, 2026, (2013, 2026))
 
-    time_df = get_minutes_by_year(conn, start_year, end_year)
-    artist_df = get_top_artists_by_year(conn, start_year, end_year)
-    tracks_df_year = get_top_tracks_by_year(conn, start_year, end_year)
-    tracks_df_year["label"] = tracks_df_year["name"] + " - " + tracks_df_year["artist"]
+    year_mask = (streams_df["year"] >= start_year) & (streams_df["year"] <= end_year)
+    filtered = pd.merge(streams_df[year_mask], tracks_df, left_on="track_uri", right_on="uri")
 
-    if time_df.empty:
+    if filtered.empty:
         st.warning(f"No listening history found between {start_year} and {end_year}")
     else:
+        time_df = (
+            filtered.groupby("year")["ms_played"]
+            .sum()
+            .reset_index()
+            .sort_values("year", ascending=True)
+        )
+        time_df["minutes_played"] = (time_df["ms_played"] / 60000).round(1)
+        time_df["year"] = time_df["year"].map(lambda x: str(x)) 
+
+        artist_df = (
+            filtered.groupby("artist")["ms_played"]
+            .sum()
+            .reset_index()
+            .sort_values("ms_played", ascending=True)
+            .tail(15)
+        )
+        artist_df["minutes_played"] = (artist_df["ms_played"] / 60000).round(1)
+
+        tracks_df_year = (
+            filtered.groupby(["name", "artist"])["ms_played"]
+            .sum()
+            .reset_index()
+            .sort_values("ms_played", ascending=True)
+            .tail(15)
+        )
+        tracks_df_year["minutes_played"] = (tracks_df_year["ms_played"] / 60000).round(1)
+        tracks_df_year["label"] = tracks_df_year["name"] + " - " + tracks_df_year["artist"]
+
         st.line_chart(time_df, x="year", y="minutes_played")
 
         artists_fig = px.bar(artist_df, x="minutes_played", y="artist", orientation="h")
@@ -50,6 +75,7 @@ with overview:
 
         tracks_fig = px.bar(tracks_df_year, x="minutes_played", y="label", orientation="h")
         st.plotly_chart(tracks_fig)
+
 
 with habits:
     st.header("How I listen")
@@ -139,6 +165,7 @@ with habits:
 
 with phases:
     st.header("What was I listening to when")
+    st.subheader("Select a year and month to see top artists and tracks")
 
     # Set up year selector
     available_years = sorted(streams_df["year"].unique(), reverse=True)
