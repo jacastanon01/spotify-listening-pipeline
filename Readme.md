@@ -16,9 +16,6 @@ A personal data pipeline and analytics dashboard that transforms Spotify's expor
 
 <img width="762" height="1302" alt="Screenshot 2026-06-11 at 4 18 36 PM" src="https://github.com/user-attachments/assets/46ef3c85-798f-4318-b6fd-a871f40dba24" />
 
-
-
-
 ---
 
 ## A Note on Process
@@ -119,9 +116,6 @@ Early versions of the overview tab ran parameterized SQL queries on every slider
 **On data quality.**
 The `skipped` field defaults to 0 rather than NULL for streams before 2023, making it unreliable as a behavioral signal for most of the dataset. The `reason_start` and `reason_end` fields are present and populated across the full history and are the more reliable behavioral signals. Findings that depend on skip data are scoped to 2023 onward.
 
-**Looking ahead: episodes and audiobooks.**
-The current schema covers tracks only. Expanding to include podcast episodes and audiobooks is a natural next step. The behavioral fields are present for all content types in the export. The tracks table would need a `content_type` column and nullable fields for type-specific metadata. The streams table needs no changes.
-
 ---
 
 ## On the API Layer
@@ -160,7 +154,7 @@ Create an empty directory and name it `data` or something similar. Open `main.py
 python main.py
 ```
 
-3. **Run app**
+4. **Run app**
 Confirm the `listening_history.db` sqlite database was created in your root directory. Then launch the dashboard:
 ```bash
 streamlit run app.py
