@@ -1,4 +1,7 @@
+import unicodedata
+
 import pandas as pd
+from unicodedata import normalize
 
 DELIBERATE, PASSIVE, OTHER = ["Deliberate", "Passive", "Other"]
 
@@ -125,3 +128,19 @@ def render_month_detail_html(top_artists: pd.DataFrame, top_tracks: pd.DataFrame
             {build_items(top_tracks, "name", subtitle_col="artist")}
         </div>
     </div>"""
+
+def normalize_artist(artist_str: str | None) -> str:
+    """
+    takes a string and normalizes it by clearing whitespace, stripping punctuation, setting letters to lower case, etc
+    :param artist_str: string of artist name 
+    :return: string that sets standard for artist
+    """
+    if artist_str is None: 
+        return "unknown artist"
+    normalized = normalize('NFC', artist_str)
+    stripped = ''.join(
+        c for c in normalized # comparing each character
+        # unicodedata.category() returns the Unicode category of a character. All punctuation categories start with 'P'
+        if not unicodedata.category(c).startswith("P") 
+    )
+    return stripped.lower().strip()
