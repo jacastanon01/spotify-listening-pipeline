@@ -2,7 +2,7 @@ from pathlib import Path
 from sqlite3 import Error
 
 from db import create_connection, init_db, insert_stream, insert_track
-from pipeline import process_data
+from pipeline.spotify import process_data
 
 DATA_DIR = Path("./data")
 

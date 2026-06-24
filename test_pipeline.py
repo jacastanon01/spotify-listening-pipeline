@@ -1,5 +1,5 @@
 from models import Stream, Track
-from pipeline import convert_to_dataclasses, is_track
+from pipeline.spotify import convert_to_dataclasses, is_track
 from typing import Any
 
 import pytest
