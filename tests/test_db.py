@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 from db import (
     create_connection,
     init_db,
+    insert_itunes_playlist,
     insert_track,
     insert_stream,
     insert_itunes_track
@@ -167,3 +168,34 @@ def test_insert_itunes_track_failure(mock_astuple):
     
     with pytest.raises(RuntimeError, match="Error inserting itunes track: iTunes insert error"):
         insert_itunes_track(mock_conn, MagicMock())
+
+        # --- Tests for insert_itunes_playlist ---
+
+@patch("db.astuple")
+def test_insert_itunes_playlist_success(mock_astuple, mem_db):
+    """Test successful insertion of an iTunes playlist."""
+    # Mock astuple to return the tuple structure expected by the SQL query
+    mock_astuple.return_value = (101, "Top 25 Most Played")
+    
+    mock_playlist = MagicMock()
+    insert_itunes_playlist(mem_db, mock_playlist)
+    
+    cursor = mem_db.cursor()
+    cursor.execute("SELECT * FROM itunes_playlists")
+    result = cursor.fetchone()
+    
+    assert result == (101, "Top 25 Most Played")
+
+
+@patch("db.astuple")
+def test_insert_itunes_playlist_failure(mock_astuple):
+    """Test error handling when inserting an iTunes playlist fails."""
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value.execute.side_effect = sqlite3.Error("Playlist insert error")
+    
+    # We still need to mock astuple here so it bypasses the dataclass check 
+    # before hitting the database execution error.
+    mock_astuple.return_value = (101, "Top 25 Most Played")
+    
+    with pytest.raises(RuntimeError, match="Error inserting itunes playlist: Playlist insert error"):
+        insert_itunes_playlist(mock_conn, MagicMock())

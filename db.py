@@ -29,7 +29,7 @@ def init_db(conn: sqlite3.Connection) -> None:
     IF NOT EXISTS prevents overwriting existing tables or data.
     :param conn: Connection object
     """
-    
+
     statements = [
         """CREATE TABLE IF NOT EXISTS tracks (
             uri     TEXT PRIMARY KEY,
@@ -125,12 +125,33 @@ def insert_stream(conn: sqlite3.Connection, stream: Stream) -> None:
         raise RuntimeError(f"Error inserting stream: {e}")
 
 def insert_itunes_track(conn: sqlite3.Connection, itunes_track: ItunesTrack) -> None:
+    """
+    Insert a track into the itunes_tracks table
+    :param conn: Connection object
+    :param itunes_track: ItunesTrack dataclass object
+    """
     sql = """
     INSERT OR IGNORE INTO itunes_tracks(track_id, name, artist, album, genre, duration_ms, year, play_count, skip_count, last_played, date_added, artist_normalized)
-    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     """
     try:
         cursor = conn.cursor()
         cursor.execute(sql, astuple(itunes_track))
     except sqlite3.Error as e:
         raise RuntimeError(f"Error inserting itunes track: {e}")
+    
+def insert_itunes_playlist(conn: sqlite3.Connection, itunes_playlist) -> None:
+    """
+    Insert a playlist into the itunes_playlists table
+    :param conn: Connection object
+    :param itunes_playlist: ItunesPlaylist dataclass object
+    """
+    sql = """
+    INSERT OR IGNORE INTO itunes_playlists(playlist_id, name)
+    VALUES(?, ?);
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql, astuple(itunes_playlist))
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Error inserting itunes playlist: {e}")

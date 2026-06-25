@@ -32,3 +32,8 @@ class ItunesTrack:
     last_played: str | None
     date_added: str | None
     artist_normalized: str
+
+@dataclass
+class ItunesPlaylist:
+    track_id: int
+    name: str | None
