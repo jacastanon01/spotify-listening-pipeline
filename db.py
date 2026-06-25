@@ -1,5 +1,6 @@
 import sqlite3
-from models import Track, Stream
+
+from models import ItunesTrack, Track, Stream
 from dataclasses import astuple
 
 
@@ -16,6 +17,7 @@ def create_connection(db_file: str, check_same_thread: bool = True) -> sqlite3.C
         # Adding the extra argument distinguishes the purpose of the connection thread. Defaults to True for safer injection
         # but will be set to False when being used for the streamlit application
         conn = sqlite3.connect(db_file, check_same_thread=check_same_thread) 
+        conn.execute("PRAGMA foreign_keys = ON")
         return conn
     except sqlite3.Error as e:
         raise RuntimeError(f"Error connecting to database: {e}")
@@ -23,37 +25,71 @@ def create_connection(db_file: str, check_same_thread: bool = True) -> sqlite3.C
 
 def init_db(conn: sqlite3.Connection) -> None:
     """
-    create tables in the database
+    Create all tables in the database. Safe to run multiple times --
+    IF NOT EXISTS prevents overwriting existing tables or data.
     :param conn: Connection object
     """
-    create_tracks_table = """
-    CREATE TABLE IF NOT EXISTS tracks (
-        uri TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        artist TEXT NOT NULL,
-        album TEXT NOT NULL
-    );"""
-
-    create_streams_table = """
-    CREATE TABLE IF NOT EXISTS streams (
-        id INTEGER PRIMARY KEY,
-        ts TEXT NOT NULL,
-        ms_played INTEGER,
-        skipped BOOLEAN,
-        reason_start TEXT,
-        reason_end TEXT,
-        track_uri TEXT NOT NULL,
-        FOREIGN KEY (track_uri) REFERENCES tracks (uri)
-    );"""
+    
+    statements = [
+        """CREATE TABLE IF NOT EXISTS tracks (
+            uri     TEXT PRIMARY KEY,
+            name    TEXT NOT NULL,
+            artist  TEXT NOT NULL,
+            album   TEXT NOT NULL
+        );""",
+        """CREATE TABLE IF NOT EXISTS streams (
+            id           INTEGER PRIMARY KEY,
+            ts           TEXT NOT NULL,
+            ms_played    INTEGER,
+            skipped      BOOLEAN,
+            reason_start TEXT,
+            reason_end   TEXT,
+            track_uri    TEXT NOT NULL,
+            FOREIGN KEY (track_uri) REFERENCES tracks (uri)
+        );""",
+        """CREATE TABLE IF NOT EXISTS itunes_tracks (
+            track_id          INTEGER PRIMARY KEY,
+            name              TEXT NOT NULL,
+            artist            TEXT,
+            album             TEXT,
+            genre             TEXT,
+            year              INTEGER,
+            duration_ms       INTEGER NOT NULL,
+            play_count        INTEGER DEFAULT 0,
+            skip_count        INTEGER DEFAULT 0,
+            last_played       TEXT,
+            date_added        TEXT,
+            artist_normalized TEXT NOT NULL
+        );""",
+        """CREATE TABLE IF NOT EXISTS track_matches (
+            itunes_track_id  INTEGER NOT NULL,
+            spotify_uri      TEXT NOT NULL,
+            match_confidence TEXT DEFAULT 'fuzzy',
+            PRIMARY KEY (itunes_track_id, spotify_uri),
+            FOREIGN KEY (itunes_track_id) REFERENCES itunes_tracks (track_id),
+            FOREIGN KEY (spotify_uri) REFERENCES tracks (uri)
+        );""",
+        """CREATE TABLE IF NOT EXISTS itunes_playlists (
+            playlist_id INTEGER PRIMARY KEY,
+            name        TEXT NOT NULL
+        );""",
+        """CREATE TABLE IF NOT EXISTS itunes_playlist_tracks (
+            playlist_id     INTEGER NOT NULL,
+            itunes_track_id INTEGER NOT NULL,
+            PRIMARY KEY (playlist_id, itunes_track_id),
+            FOREIGN KEY (playlist_id) REFERENCES itunes_playlists (playlist_id),
+            FOREIGN KEY (itunes_track_id) REFERENCES itunes_tracks (track_id)
+        );"""
+    ]
 
     try:
         cursor = conn.cursor()
-        cursor.execute(create_tracks_table)
-        cursor.execute(create_streams_table)
+        for statement in statements:
+            cursor.execute(statement)
         conn.commit()
     except sqlite3.Error as e:
         raise RuntimeError(f"Error initializing database: {e}")
-
+    
 
 def insert_track(conn: sqlite3.Connection, track: Track) -> None:
     """
@@ -87,3 +123,14 @@ def insert_stream(conn: sqlite3.Connection, stream: Stream) -> None:
         cursor.execute(sql, astuple(stream))
     except sqlite3.Error as e:
         raise RuntimeError(f"Error inserting stream: {e}")
+
+def insert_itunes_track(conn: sqlite3.Connection, itunes_track: ItunesTrack) -> None:
+    sql = """
+    INSERT OR IGNORE INTO itunes_tracks(track_id, name, artist, album, genre, duration_ms, year, play_count, skip_count, last_played, date_added, artist_normalized)
+    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql, astuple(itunes_track))
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Error inserting itunes track: {e}")

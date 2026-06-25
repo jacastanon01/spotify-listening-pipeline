@@ -26,6 +26,7 @@ class ItunesTrack:
     album: str | None
     genre: str | None
     duration_ms: int
+    year: int | None
     plays: int
     skips: int
     last_played: str | None
