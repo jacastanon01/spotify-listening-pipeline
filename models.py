@@ -35,5 +35,10 @@ class ItunesTrack:
 
 @dataclass
 class ItunesPlaylist:
-    track_id: int
+    playlist_id: int
     name: str | None
+
+@dataclass 
+class ItunesPlaylistTrack:
+    playlist_id: int
+    itunes_track_id: int
