@@ -71,7 +71,7 @@ def process_itunes_tracks(library: dict) -> list[ItunesTrack]:
     """
     itracks = library.get("Tracks", {})
     results = [convert_to_itunes_track(t) for t in itracks.values()]
-    print(f"processed {len(results)} tracks")
+    print(f"  Parsed {len(results)} iTunes tracks from library")
     return results
 
 
