@@ -27,8 +27,8 @@ class ItunesTrack:
     genre: str | None
     duration_ms: int
     year: int | None
-    plays: int
-    skips: int
+    play_count: int
+    skip_count: int
     last_played: str | None
     date_added: str | None
     artist_normalized: str
