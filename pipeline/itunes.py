@@ -135,11 +135,3 @@ def process_itunes_playlists(
         playlist_tracks.extend(track) 
 
     return playlists, playlist_tracks 
-
-if __name__ == "__main__":
-    from pprint import pprint
-
-    library = load_itunes_data("data/iTunes Music Library.xml")
-
-    res = process_itunes_tracks(library)[:3]
-    pprint(res)

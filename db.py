@@ -1,6 +1,6 @@
 import sqlite3
 
-from models import ItunesTrack, Track, Stream
+from models import ItunesPlaylist, ItunesPlaylistTrack, ItunesTrack, Track, Stream
 from dataclasses import astuple
 
 
@@ -140,7 +140,7 @@ def insert_itunes_track(conn: sqlite3.Connection, itunes_track: ItunesTrack) -> 
     except sqlite3.Error as e:
         raise RuntimeError(f"Error inserting itunes track: {e}")
     
-def insert_itunes_playlist(conn: sqlite3.Connection, itunes_playlist) -> None:
+def insert_itunes_playlist(conn: sqlite3.Connection, itunes_playlist: ItunesPlaylist) -> None:
     """
     Insert a playlist into the itunes_playlists table
     :param conn: Connection object
@@ -155,3 +155,19 @@ def insert_itunes_playlist(conn: sqlite3.Connection, itunes_playlist) -> None:
         cursor.execute(sql, astuple(itunes_playlist))
     except sqlite3.Error as e:
         raise RuntimeError(f"Error inserting itunes playlist: {e}")
+    
+def insert_itunes_playlist_track(conn: sqlite3.Connection, playlist_track: ItunesPlaylistTrack) -> None:
+    """
+    Insert a playlist-track membership into the itunes_playlist_tracks table
+    :param conn: Connection object
+    :param playlist_track: ItunesPlaylistTrack dataclass object
+    """
+    sql = """
+    INSERT OR IGNORE INTO itunes_playlist_tracks(playlist_id, itunes_track_id)
+    VALUES(?, ?);
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql, astuple(playlist_track))
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Error inserting itunes playlist track: {e}")
