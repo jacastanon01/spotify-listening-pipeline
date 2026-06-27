@@ -45,7 +45,8 @@ def init_db(conn: sqlite3.Connection) -> None:
             reason_start TEXT,
             reason_end   TEXT,
             track_uri    TEXT NOT NULL,
-            FOREIGN KEY (track_uri) REFERENCES tracks (uri)
+            FOREIGN KEY (track_uri) REFERENCES tracks (uri),
+            UNIQUE(ts, track_uri)
         );""",
         """CREATE TABLE IF NOT EXISTS itunes_tracks (
             track_id          INTEGER PRIMARY KEY,
