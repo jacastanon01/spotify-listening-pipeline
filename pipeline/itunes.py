@@ -32,7 +32,7 @@ def load_itunes_data(path: Path) -> dict:
 
 
 
-def convert_to_itunes_track(track_dict: dict) -> ItunesTrack:
+def convert_to_itunes_track(track_dict: dict) -> ItunesTrack | None:
     """
     Map a single raw plist track dictionary to an ItunesTrack dataclass.
     :param track_dict: One track entry from the plist Tracks dictionary
@@ -45,25 +45,34 @@ def convert_to_itunes_track(track_dict: dict) -> ItunesTrack:
     added_date = track_dict.get("Date Added")
     date_added = added_date.isoformat() if added_date else None
 
-    itunes_track = ItunesTrack(
-        track_id = track_dict["Track ID"],
-        name = track_dict["Name"],
-        artist = artist,
-        album = track_dict.get("Album"),
-        genre= track_dict.get("Genre"),
-        duration_ms = track_dict.get("Stop Time", 0) or track_dict.get("Total Time", 0),
-        year= track_dict.get("Year"),
-        play_count= track_dict.get("Play Count", 0),
-        skip_count= track_dict.get("Skip Count", 0),
-        last_played= last_played,
-        date_added= date_added,
-        artist_normalized = normalize_artist(artist)
-    )
+    try:
+        itunes_track = ItunesTrack(
+            track_id = track_dict["Track ID"],
+            name = track_dict["Name"],
+            artist = artist,
+            album = track_dict.get("Album"),
+            genre= track_dict.get("Genre"),
+            duration_ms = track_dict.get("Stop Time", 0) or track_dict.get("Total Time", 0),
+            year= track_dict.get("Year"),
+            play_count= track_dict.get("Play Count", 0),
+            skip_count= track_dict.get("Skip Count", 0),
+            last_played= last_played,
+            date_added= date_added,
+            artist_normalized = normalize_artist(artist)
+        )
+
+    except KeyError as e:
+        # THIS is your Dead-Letter Queue in action.
+        # You write the bad data somewhere else, and don't stop the program.
+        print(f"Failed to parse track, missing key {e}. Writing to error log...")
+        with open("malformed_itunes_data.log", "a") as error_log:
+            error_log.write(f"Missing {e} in data: {track_dict}\n")
+        return None
 
     return itunes_track
 
 
-def process_itunes_tracks(library: dict) -> list[ItunesTrack]:
+def process_itunes_tracks(library: dict) -> list[ItunesTrack | None]:
     """
     Extract and convert all tracks from the library dictionary.
     :param library: Full library dict returned by load_itunes_data

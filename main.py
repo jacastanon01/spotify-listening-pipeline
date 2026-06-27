@@ -38,9 +38,13 @@ def main() -> None:
 
         itunes_tracks = process_itunes_tracks(library)
         print(f"  Inserting {len(itunes_tracks)} tracks...")
+        
         for itunes_track in itunes_tracks:
             try:
-                insert_itunes_track(conn, itunes_track)
+                if itunes_track is None:
+                    print("No track to process from XML")
+                else:
+                    insert_itunes_track(conn, itunes_track)
             except Error as e:
                 conn.rollback()
                 raise RuntimeError(f"Error inserting iTunes track: {e}")
