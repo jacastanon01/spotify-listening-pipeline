@@ -75,5 +75,5 @@ def process_data(path: Path) -> list[Tuple[Track, Stream]]:
     data = load_data(path)
     filtered_data = filter(is_track, data)
     processed_data = [convert_to_dataclasses(record) for record in filtered_data]
-    print(f"processed {len(processed_data)} files from {path}")
+    print(f"processed {len(processed_data)} records from {path}")
     return processed_data
