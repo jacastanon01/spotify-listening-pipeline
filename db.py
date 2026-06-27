@@ -65,7 +65,7 @@ def init_db(conn: sqlite3.Connection) -> None:
         """CREATE TABLE IF NOT EXISTS track_matches (
             itunes_track_id  INTEGER NOT NULL,
             spotify_uri      TEXT NOT NULL,
-            match_confidence TEXT DEFAULT 'fuzzy',
+            match_confidence CHECK(match_confidence IN ('exact', 'fuzzy')) DEFAULT 'fuzzy',
             PRIMARY KEY (itunes_track_id, spotify_uri),
             FOREIGN KEY (itunes_track_id) REFERENCES itunes_tracks (track_id),
             FOREIGN KEY (spotify_uri) REFERENCES tracks (uri)
