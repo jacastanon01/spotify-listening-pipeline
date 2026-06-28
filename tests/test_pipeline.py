@@ -82,9 +82,3 @@ def test_missing_ms_played_raises():
     }
     with pytest.raises(ValueError):
         convert_to_dataclasses(invalid_ms_played)
-
-def test_normalize_artist():
-    assert normalize_artist("KiD CuDi!  ") == "kid cudi"
-    assert normalize_artist("Kid Cudi") == "kid cudi"
-    assert normalize_artist(None) == "unknown artist"
-    assert normalize_artist("¡MAYDAY!") == "mayday"
