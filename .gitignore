@@ -8,3 +8,4 @@ notes.md
 .env
 .spotify_cache
 .spotify_cursor
+fuzz_est_script.py
