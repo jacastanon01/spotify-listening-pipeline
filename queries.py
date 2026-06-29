@@ -16,4 +16,3 @@ WHERE it.artist_normalized IN (
     SELECT DISTINCT lower(t.artist) FROM tracks t
 );
 """
-

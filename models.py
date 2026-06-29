@@ -42,3 +42,9 @@ class ItunesPlaylist:
 class ItunesPlaylistTrack:
     playlist_id: int
     itunes_track_id: int
+
+@dataclass
+class TrackMatch:
+    itunes_track_id: int
+    spotify_uri: str
+    match_confidence: str

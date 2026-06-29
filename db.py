@@ -1,6 +1,6 @@
 import sqlite3
 
-from models import ItunesPlaylist, ItunesPlaylistTrack, ItunesTrack, Track, Stream
+from models import ItunesPlaylist, ItunesPlaylistTrack, ItunesTrack, Track, Stream, TrackMatch
 from dataclasses import astuple
 
 
@@ -172,3 +172,14 @@ def insert_itunes_playlist_track(conn: sqlite3.Connection, playlist_track: Itune
         cursor.execute(sql, astuple(playlist_track))
     except sqlite3.Error as e:
         raise RuntimeError(f"Error inserting itunes playlist track: {e}")
+    
+def insert_match(conn: sqlite3.Connection, match: TrackMatch) -> None:
+    sql = """
+    INSERT OR IGNORE INTO track_matches(itunes_track_id, spotify_uri, match_confidence)
+    VALUES(?, ?, ?)
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql, astuple(match))
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Error inserting track match: {e}")

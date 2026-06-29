@@ -1,3 +1,4 @@
+from collections import defaultdict
 import unicodedata
 
 import pandas as pd
@@ -148,10 +149,12 @@ def normalize_artist(artist_str: str | None) -> str:
 def normalize_track_name(track_str: str | None) -> str:
     if track_str is None:
         return ""
-    result = track_str
+    result = track_str.strip()
     # some iTunes titles AND spotify titles begin with a paranthesis e.g. ((Don't Fear) The Reaper, (Sittin' On) The Dock of the Bay
-    for marker in ["("]:
+    for marker in ["(", "["]:
         i = result.find(marker)
         if i > 0: 
             result = result[:i]
     return result.lower().strip()
+
+

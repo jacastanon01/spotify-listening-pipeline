@@ -1,9 +1,10 @@
 from pathlib import Path
 from sqlite3 import Error
 
-from db import create_connection, init_db, insert_itunes_playlist, insert_itunes_playlist_track, insert_itunes_track, insert_stream, insert_track
+from db import create_connection, init_db, insert_itunes_playlist, insert_itunes_playlist_track, insert_itunes_track, insert_match, insert_stream, insert_track
 from pipeline.itunes import load_itunes_data, process_itunes_playlists, process_itunes_tracks
-from pipeline.spotify import process_data
+from pipeline.spotify import load_spotify_data, process_spotify_data
+from populate_matches import build_artist_lookup, find_matches, load_spotify_tracks
 
 DATA_DIR = Path("./data")
 ITUNES_XML = DATA_DIR / "iTunes Music Library.xml"
@@ -20,7 +21,7 @@ def main() -> None:
 
     for file in json_files:
         print(f"  Processing {file.name}...")
-        records = process_data(file)
+        records = process_spotify_data(file)
         for record in records:
             track, stream = record
             try:
@@ -62,12 +63,25 @@ def main() -> None:
         for playlist_track in playlist_tracks:
             try:
                 insert_itunes_playlist_track(conn, playlist_track)
+                print(f"  ✓ Playlists done")
             except Error as e:
                 conn.rollback()
                 raise RuntimeError(f"Error inserting iTunes playlist track: {e}")
-        print(f"  ✓ Playlists done")
+        print("\nRunning track matching...")
+
+        spotify_tracks = load_spotify_tracks(conn)
+        spotify_by_artist = build_artist_lookup(spotify_tracks)
+        matches = find_matches(itunes_tracks, spotify_by_artist)
+        for match in matches:
+            try:
+                insert_match(conn, match)
+            except Error as e:
+                conn.rollback()
+                raise RuntimeError(f"Error inserting match: {e}")
+        print("  ✓ Matching complete")
     else:
         print(f"\nNo iTunes library found at {ITUNES_XML}, skipping")
+
 
     conn.commit()
     print("\n✓ All data committed successfully")
