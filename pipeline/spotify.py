@@ -4,7 +4,7 @@ from typing import Any, Tuple
 from models import Track, Stream
 
 
-def load_data(path: Path) -> list[dict[str, Any]]:
+def load_spotify_data(path: Path) -> list[dict[str, Any]]:
     """
     Load the data from the JSON file and return it as a list of dictionaries.
     :param path: The file path to the JSON data file.
@@ -66,13 +66,13 @@ def convert_to_dataclasses(record: dict[str, Any]) -> Tuple[Track, Stream]:
     return track, stream
 
 
-def process_data(path: Path) -> list[Tuple[Track, Stream]]:
+def process_spotify_data(path: Path) -> list[Tuple[Track, Stream]]:
     """
     Process the JSON data file and convert it into a list of Track and Stream dataclass instances.
     :param path: The file path to the JSON data file.
     :return: A list of tuples, where each tuple contains a Track dataclass instance and a Stream dataclass instance.
     """
-    data = load_data(path)
+    data = load_spotify_data(path)
     filtered_data = filter(is_track, data)
     processed_data = [convert_to_dataclasses(record) for record in filtered_data]
     print(f"processed {len(processed_data)} records from {path}")
