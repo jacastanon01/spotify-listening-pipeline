@@ -137,7 +137,7 @@ A dedicated junction table that links local iTunes tracks to Spotify URIs.
 | --- | --- | --- |
 | `itunes_track_id` | INTEGER | **Composite PK / FK** referencing `itunes_tracks.track_id`. |
 | `spotify_uri` | TEXT | **Composite PK / FK** referencing `tracks.uri`. |
-| `match_confidence` | TEXT | Indicates match quality (`exact` or `fuzzy`). Default: `fuzzy`. |
+| `match_confidence` | TEXT | Indicates match quality (`exact`, `fuzzy` or `low`). Default: `low`. |
 
 ---
 
